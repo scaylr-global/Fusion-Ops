@@ -237,6 +237,7 @@ async function signIn(){
   errMsg="";
   let un=$("#li-un").value.trim(), pin=$("#li-pin").value;
   const email = un.includes("@") ? un : un.toLowerCase().replace(/\s+/g,"")+"@"+PIN_DOMAIN;
+  if(!un.includes("@") && /^\d{4}$/.test(pin)) pin = pin + "00";
   const { data, error }=await sb.auth.signInWithPassword({ email, password:pin });
   if(error){ errMsg="Wrong username or PIN."; render(); return; }
   user=data.user; await loadAll(); render();
@@ -500,7 +501,7 @@ function vLogin(){ return `
     <h2><b style="color:var(--acc)">Scaylr</b> Ops</h2>
     <p class="meta">Sign in with your username and PIN.</p>
     <label>Username</label><input id="li-un" autocomplete="username" placeholder="pavith">
-    <label>PIN</label><input id="li-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6 digits" onkeydown="if(event.key==='Enter')signIn()">
+    <label>PIN</label><input id="li-pin" type="password" inputmode="numeric" maxlength="6" autocomplete="current-password" placeholder="4 digits" onkeydown="if(event.key==='Enter')signIn()">
     <div class="err">${esc(errMsg)}</div>
     <div class="m-foot">
       <button class="ghost" onclick="localStorage.removeItem('scaylr_cfg');location.reload()">Reset</button>
