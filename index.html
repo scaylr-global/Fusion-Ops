@@ -6,33 +6,41 @@
 <title>Scaylr Ops</title>
 <style>
   :root {
-    --bg:#0A0C10; --sur:#13161D; --sur2:#1A1E27; --line:rgba(255,255,255,.07);
+    --bg:#0A0C10; --sur:#13161D; --sur2:#1A1E27; --sur3:#20242E; --line:rgba(255,255,255,.07);
     --txt:#F2F4F8; --sec:#9AA3B2; --dim:#5D6673;
-    --teal:#2DD4BF; --teal-dim:#14B8A6; --green:#34D399; --amber:#FBBF24; --red:#F87171; --blue:#60A5FA; --violet:#A78BFA;
+    --acc:#2DD4BF; --acc-d:#14B8A6; --acc-txt:#05201C; --acc-glow:rgba(45,212,191,.35);
+    --green:#34D399; --amber:#FBBF24; --red:#F87171; --blue:#60A5FA; --violet:#A78BFA;
     --r:14px;
   }
   * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
   body { background:var(--bg); color:var(--txt); font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',Roboto,sans-serif; font-size:15px; line-height:1.45; }
-  #app { max-width:1080px; margin:0 auto; padding:0 20px 96px; }
   .fade { animation:fade .22s ease; }
   @keyframes fade { from { opacity:0; transform:translateY(4px);} to { opacity:1; transform:none;} }
 
-  header { display:flex; align-items:center; gap:16px; padding:22px 0 18px; }
-  .logo { font-size:16px; font-weight:700; letter-spacing:2.5px; }
-  .logo b { color:var(--teal); font-weight:700; }
-  nav.top { display:flex; gap:2px; background:var(--sur); border-radius:99px; padding:3px; }
-  nav.top button { background:none; border:none; color:var(--sec); padding:7px 15px; border-radius:99px; cursor:pointer; font-size:13.5px; font-weight:500; transition:all .18s; }
-  nav.top button.on { background:var(--sur2); color:var(--txt); }
-  .spacer { flex:1; }
-  .icon-btn { background:none; border:none; color:var(--dim); cursor:pointer; font-size:14px; padding:6px; transition:color .18s; }
-  .icon-btn:hover { color:var(--sec); }
+  .shell { display:flex; min-height:100vh; }
+  .side { width:224px; flex:none; position:fixed; top:0; bottom:0; left:0; background:var(--sur); display:flex; flex-direction:column; padding:20px 12px; z-index:30; }
+  .side .logo { font-size:15px; font-weight:700; letter-spacing:2px; padding:4px 12px 2px; }
+  .side .logo b { color:var(--acc); }
+  .side .date { color:var(--dim); font-size:11.5px; padding:0 12px 18px; }
+  .side .grp { color:var(--dim); font-size:10.5px; font-weight:700; letter-spacing:1.4px; padding:14px 12px 6px; }
+  .side button.nav { display:flex; align-items:center; gap:10px; width:100%; background:none; border:none; color:var(--sec); padding:10px 12px; border-radius:10px; cursor:pointer; font-size:14px; font-weight:500; transition:all .15s; text-align:left; }
+  .side button.nav:hover { color:var(--txt); background:var(--sur2); }
+  .side button.nav.on { background:var(--sur2); color:var(--acc); font-weight:600; }
+  .side .cnt { margin-left:auto; background:var(--acc); color:var(--acc-txt); font-size:11px; font-weight:700; border-radius:99px; padding:1px 8px; }
+  .side .cnt.warn { background:var(--red); color:#fff; }
+  .side .foot { margin-top:auto; border-top:1px solid var(--line); padding-top:12px; }
+  .side .me { display:flex; align-items:center; gap:10px; padding:8px 12px; }
+  .init { width:34px; height:34px; border-radius:99px; background:var(--sur3); color:var(--acc); display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:none; }
+  .init.sm { width:24px; height:24px; font-size:10px; }
+  main { flex:1; margin-left:224px; padding:26px 32px 110px; max-width:1160px; }
 
-  h1 { font-size:26px; font-weight:700; letter-spacing:-.3px; margin:26px 0 4px; }
-  .sub { color:var(--sec); font-size:14px; margin-bottom:22px; }
-  .sect { color:var(--dim); font-size:11.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; margin:30px 0 10px; }
+  h1 { font-size:28px; font-weight:700; letter-spacing:-.4px; margin:4px 0 4px; }
+  .sub { color:var(--sec); font-size:14px; margin-bottom:20px; }
+  .sect { color:var(--dim); font-size:11.5px; font-weight:600; letter-spacing:1.2px; text-transform:uppercase; margin:28px 0 10px; }
+  .topbar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
 
-  .btn { background:var(--teal); border:none; color:#05201C; padding:10px 18px; border-radius:99px; cursor:pointer; font-size:14px; font-weight:600; transition:all .18s; }
-  .btn:hover { background:var(--teal-dim); }
+  .btn { background:var(--acc); border:none; color:var(--acc-txt); padding:10px 18px; border-radius:99px; cursor:pointer; font-size:14px; font-weight:600; transition:all .18s; }
+  .btn:hover { background:var(--acc-d); }
   .btn:active { transform:scale(.97); }
   .btn.sm { padding:7px 14px; font-size:13px; }
   .ghost { background:var(--sur); border:none; color:var(--sec); padding:9px 16px; border-radius:99px; cursor:pointer; font-size:13.5px; font-weight:500; transition:all .18s; }
@@ -43,6 +51,22 @@
   .wa:hover { background:#174433; color:#4ADE80; }
   .urg { background:#3A1E1E; color:var(--red); }
   .urg:hover { background:#4A2626; color:var(--red); }
+
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:12px; margin:18px 0 6px; }
+  .scard { background:var(--sur); border-radius:var(--r); padding:16px 18px; }
+  .scard .g { font-size:17px; margin-bottom:10px; display:inline-flex; width:34px; height:34px; border-radius:10px; align-items:center; justify-content:center; background:var(--sur2); }
+  .scard .v { font-size:26px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.15; }
+  .scard .t { color:var(--sec); font-size:13px; font-weight:500; }
+  .scard .s { color:var(--dim); font-size:12px; }
+  .twin { display:grid; grid-template-columns:1fr 300px; gap:12px; align-items:stretch; }
+  @media (max-width:900px){ .twin { grid-template-columns:1fr; } }
+  .panel { background:var(--sur); border-radius:var(--r); padding:18px 20px; }
+  .panel h3 { font-size:12px; color:var(--dim); font-weight:600; letter-spacing:1.2px; text-transform:uppercase; margin-bottom:12px; }
+
+  .ring { position:relative; width:110px; height:110px; margin:6px auto; cursor:pointer; }
+  .ring svg { transform:rotate(-90deg); }
+  .ring .pc { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:19px; font-weight:700; }
+  .ring .pc small { font-size:9.5px; color:var(--dim); font-weight:600; letter-spacing:.5px; }
 
   .list { background:var(--sur); border-radius:var(--r); overflow:hidden; }
   .item { display:flex; align-items:center; gap:12px; padding:14px 18px; cursor:pointer; transition:background .15s; border-bottom:1px solid var(--line); flex-wrap:wrap; }
@@ -65,21 +89,12 @@
   .sc-cold { background:var(--sur2); color:var(--dim); }
   .flag { color:var(--red); font-size:13px; font-weight:700; }
 
-  .hero { display:flex; gap:32px; flex-wrap:wrap; padding:8px 2px 4px; align-items:center; }
-  .hero .h { display:flex; flex-direction:column; gap:2px; }
-  .hero .n { font-size:32px; font-weight:700; letter-spacing:-.5px; font-variant-numeric:tabular-nums; line-height:1.1; }
-  .hero .l { color:var(--dim); font-size:12.5px; font-weight:500; }
-  .ring { position:relative; width:88px; height:88px; flex:none; cursor:pointer; }
-  .ring svg { transform:rotate(-90deg); }
-  .ring .pc { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:16px; font-weight:700; }
-  .ring .pc small { font-size:9.5px; color:var(--dim); font-weight:600; letter-spacing:.5px; }
-
   .board { display:flex; gap:12px; overflow-x:auto; padding:4px 2px 18px; align-items:flex-start; }
   .col { background:var(--sur); border-radius:var(--r); min-width:230px; width:230px; flex:none; padding:12px; transition:background .15s; }
-  .col.dragover { background:var(--sur2); outline:1.5px dashed var(--teal); outline-offset:-4px; }
+  .col.dragover { background:var(--sur2); outline:1.5px dashed var(--acc); outline-offset:-4px; }
   .col h4 { font-size:12px; color:var(--sec); font-weight:600; letter-spacing:.8px; text-transform:uppercase; padding:2px 6px 10px; display:flex; justify-content:space-between; }
   .cardl { background:var(--sur2); border-radius:11px; padding:12px 14px; margin-bottom:8px; cursor:pointer; transition:all .15s; }
-  .cardl:hover { transform:translateY(-1px); background:#20242E; }
+  .cardl:hover { transform:translateY(-1px); background:var(--sur3); }
   .cardl.urgent { box-shadow:inset 3px 0 0 var(--red); }
   .cardl .nm { font-weight:600; font-size:14px; }
 
@@ -88,44 +103,59 @@
   .toolbar select { width:auto; }
 
   .modal-bg { position:fixed; inset:0; background:rgba(0,0,0,.65); display:flex; align-items:flex-end; justify-content:center; z-index:50; animation:fade .18s ease; backdrop-filter:blur(3px); }
-  .sheet { background:var(--sur); border-radius:20px 20px 0 0; padding:24px 22px calc(24px + env(safe-area-inset-bottom)); width:100%; max-width:600px; max-height:88vh; overflow:auto; animation:up .25s cubic-bezier(.3,1,.4,1); }
+  .sheet { background:var(--sur); border-radius:20px 20px 0 0; padding:24px 22px calc(24px + env(safe-area-inset-bottom)); width:100%; max-width:640px; max-height:90vh; overflow:auto; animation:up .25s cubic-bezier(.3,1,.4,1); }
   @keyframes up { from { transform:translateY(40px); opacity:.4;} to { transform:none; opacity:1;} }
   @media (min-width:640px){ .modal-bg { align-items:center; padding:24px; } .sheet { border-radius:20px; } }
   .grab { width:36px; height:4px; border-radius:99px; background:var(--line); margin:-8px auto 16px; }
   label { display:block; font-size:12px; color:var(--dim); font-weight:600; margin:14px 0 5px; letter-spacing:.5px; }
   input, select, textarea { width:100%; background:var(--bg); border:1px solid var(--line); border-radius:10px; color:var(--txt); padding:11px 12px; font-size:15px; font-family:inherit; transition:border .18s; -webkit-appearance:none; }
-  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--teal); }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--acc); }
   textarea { resize:vertical; min-height:60px; }
   .m-foot { display:flex; gap:10px; justify-content:flex-end; margin-top:22px; align-items:center; }
   .err { color:var(--red); font-size:13px; margin-top:10px; min-height:16px; }
 
   .seg { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
   .seg button { font-size:12.5px; padding:7px 13px; border-radius:99px; border:none; background:var(--sur2); color:var(--sec); cursor:pointer; font-weight:500; transition:all .15s; }
-  .seg button.on { background:var(--teal); color:#05201C; font-weight:600; }
+  .seg button.on { background:var(--acc); color:var(--acc-txt); font-weight:600; }
+
+  .tabs { display:flex; gap:2px; margin:18px 0 0; border-bottom:1px solid var(--line); }
+  .tabs button { background:none; border:none; color:var(--sec); padding:10px 14px; cursor:pointer; font-size:13.5px; font-weight:500; border-bottom:2px solid transparent; transition:all .15s; }
+  .tabs button.on { color:var(--acc); border-bottom-color:var(--acc); font-weight:600; }
+  .tabbody { padding-top:16px; }
+
+  .gp { background:var(--sur2); border-radius:12px; padding:16px; margin-top:12px; }
+  .gp .row { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--line); align-items:flex-start; }
+  .gp .row:last-child { border:none; }
+  .gp .num { width:22px; height:22px; border-radius:99px; background:var(--sur3); color:var(--acc); font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; flex:none; margin-top:1px; }
+  .gp .k { color:var(--dim); font-size:10.5px; font-weight:700; letter-spacing:1px; }
+  .gp .v { font-size:14px; margin-top:2px; }
+  .gpbar { height:5px; background:var(--sur3); border-radius:99px; margin:10px 0 4px; overflow:hidden; }
+  .gpbar i { display:block; height:100%; background:var(--acc); border-radius:99px; }
+  .copy { background:var(--sur3); border:none; color:var(--sec); font-size:10.5px; font-weight:700; letter-spacing:.6px; padding:3px 9px; border-radius:6px; cursor:pointer; margin-left:8px; }
+  .copy:hover { color:var(--txt); }
 
   .int { padding:10px 0; border-bottom:1px solid var(--line); font-size:14px; }
   .int:last-child { border:none; }
   .chip { background:var(--sur2); border-radius:6px; padding:2px 8px; font-size:11.5px; color:var(--sec); font-weight:500; }
 
-  .fab { position:fixed; right:22px; bottom:calc(84px + env(safe-area-inset-bottom)); width:54px; height:54px; border-radius:99px; background:var(--teal); color:#05201C; border:none; font-size:26px; cursor:pointer; box-shadow:0 6px 24px rgba(45,212,191,.35); z-index:40; transition:all .18s; line-height:1; }
+  .fab { position:fixed; right:22px; bottom:calc(84px + env(safe-area-inset-bottom)); width:54px; height:54px; border-radius:99px; background:var(--acc); color:var(--acc-txt); border:none; font-size:26px; cursor:pointer; box-shadow:0 6px 24px var(--acc-glow); z-index:40; transition:all .18s; line-height:1; display:none; }
   .fab:active { transform:scale(.94); }
-  @media (min-width:768px){ .fab { bottom:28px; } }
 
   nav.bottom { display:none; }
-  @media (max-width:767px){
-    nav.top { display:none; }
+  @media (max-width:820px){
+    .side { display:none; }
+    main { margin-left:0; padding:20px 18px 110px; }
+    .fab { display:block; }
     nav.bottom { display:flex; position:fixed; left:0; right:0; bottom:0; background:rgba(19,22,29,.92); backdrop-filter:blur(14px); border-top:1px solid var(--line); z-index:40; padding-bottom:env(safe-area-inset-bottom); }
     nav.bottom button { flex:1; background:none; border:none; color:var(--dim); padding:11px 0 13px; cursor:pointer; font-size:10.5px; font-weight:600; display:flex; flex-direction:column; gap:3px; align-items:center; }
-    nav.bottom button.on { color:var(--teal); }
+    nav.bottom button.on { color:var(--acc); }
     nav.bottom .glyph { font-size:18px; line-height:1; }
-    .hero { gap:20px; }
-    .hero .n { font-size:26px; }
   }
 
   #toasts { position:fixed; bottom:calc(76px + env(safe-area-inset-bottom)); left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:60; pointer-events:none; }
-  @media (min-width:768px){ #toasts { bottom:24px; } }
+  @media (min-width:821px){ #toasts { bottom:24px; } }
   .toast { background:var(--sur2); color:var(--txt); border:1px solid var(--line); border-radius:99px; padding:10px 20px; font-size:13.5px; font-weight:500; animation:up .25s ease; box-shadow:0 8px 30px rgba(0,0,0,.4); }
-  .auth { max-width:360px; margin:14vh auto 0; }
+  .auth { max-width:360px; margin:14vh auto 0; padding:0 18px; }
   .auth .card { background:var(--sur); border-radius:20px; padding:28px 24px; }
   .auth h2 { font-size:20px; margin-bottom:4px; }
 </style>
@@ -140,13 +170,14 @@ const STATUSES = ["New","Contacted","Meeting Set","On Hold","Closed Won","Closed
 const OPEN_ST = ["New","Contacted","Meeting Set"];
 const ACTIVE_ST = ["New","Contacted","Meeting Set","On Hold"];
 const SOURCES = ["Instagram","Facebook","WhatsApp","Referral","Other"];
-let sb=null, user=null, D={clients:[],leads:[],followups:[],interactions:[]}, view="today", modal=null, errMsg="", boardClient="all", dragId=null;
+const PIN_DOMAIN = "fusionops.local";
+let sb=null, user=null, D={clients:[],leads:[],followups:[],interactions:[]}, view="dash", modal=null, errMsg="", boardClient="all", dragId=null;
 let flt = { q:"", st:"Active", src:"all" };
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const pref = () => { try { return JSON.parse(localStorage.getItem("scaylr_pref")||"{}"); } catch(e){ return {}; } };
-const setPref = o => localStorage.setItem("scaylr_pref", JSON.stringify(Object.assign(pref(), o)));
+const setPref = o => { localStorage.setItem("scaylr_pref", JSON.stringify(Object.assign(pref(), o))); applyAccent(); };
 const CUR = () => pref().cur || "LKR";
 const money = n => (CUR()==="USD"?"$":"LKR ") + Number(n||0).toLocaleString(undefined,{maximumFractionDigits:0});
 const today = () => new Date().toISOString().slice(0,10);
@@ -154,8 +185,18 @@ const fmtD = d => d ? new Date(d+"T00:00:00").toLocaleDateString(undefined,{day:
 const dcls = s => "d-"+s.replace(/\s/g,"");
 const clientOf = l => D.clients.find(c=>c.id===l.client_id);
 const cfg = () => { try { return JSON.parse(localStorage.getItem("scaylr_cfg")||"null"); } catch(e){ return null; } };
-const myName = () => pref().name || (user && user.email ? user.email.split("@")[0].replace(/^./,c=>c.toUpperCase()) : "there");
+const myUsername = () => user && user.email ? user.email.split("@")[0] : "me";
+const myName = () => pref().name || myUsername().split(/[._-]/)[0].replace(/^./,c=>c.toUpperCase());
+const initials = s => { const p=String(s||"").split(/[._\s-]+/).filter(Boolean); return ((p[0]||" ")[0]+(p[1]?p[1][0]:(p[0]||"  ")[1]||"")).toUpperCase(); };
 
+function applyAccent(){
+  const orange = pref().acc==="orange";
+  const r = document.documentElement.style;
+  r.setProperty("--acc", orange?"#FB923C":"#2DD4BF");
+  r.setProperty("--acc-d", orange?"#F97316":"#14B8A6");
+  r.setProperty("--acc-txt", orange?"#331303":"#05201C");
+  r.setProperty("--acc-glow", orange?"rgba(251,146,60,.35)":"rgba(45,212,191,.35)");
+}
 function toast(msg){
   const t=document.createElement("div");
   t.className="toast"; t.textContent=msg;
@@ -164,6 +205,7 @@ function toast(msg){
 }
 
 async function boot(){
+  applyAccent();
   const c=cfg();
   if(!c){ render(); return; }
   sb=window.supabase.createClient(c.url,c.key);
@@ -193,8 +235,10 @@ async function saveSetup(){
 }
 async function signIn(){
   errMsg="";
-  const { data, error }=await sb.auth.signInWithPassword({ email:$("#li-em").value.trim(), password:$("#li-pw").value });
-  if(error){ errMsg=error.message; render(); return; }
+  let un=$("#li-un").value.trim(), pin=$("#li-pin").value;
+  const email = un.includes("@") ? un : un.toLowerCase().replace(/\s+/g,"")+"@"+PIN_DOMAIN;
+  const { data, error }=await sb.auth.signInWithPassword({ email, password:pin });
+  if(error){ errMsg="Wrong username or PIN."; render(); return; }
   user=data.user; await loadAll(); render();
 }
 async function signOut(){ await sb.auth.signOut(); user=null; render(); }
@@ -255,6 +299,66 @@ function callOpen(id){
   if(!p){ toast("No valid phone number on this lead"); return; }
   location.href="tel:+"+p;
 }
+function copyTxt(t){
+  navigator.clipboard.writeText(t).then(()=>toast("Copied"));
+}
+
+/* ---------- game plan ---------- */
+function gamePlan(l){
+  const c=clientOf(l)||{};
+  const ds=daysSince(l);
+  const val=Number(l.deal_value)||0;
+  const cn=c.name||"us";
+  const long = ds>=7;
+  let p;
+  if(l.status==="New") p={
+    obj:"Make first contact fast and qualify "+l.name,
+    open:"Hi "+l.name+"! Thanks for reaching out to "+cn+". So I can point you in the right direction — tell me a bit about what you're looking for?",
+    emph:"Speed. Fresh leads convert best within hours — reply now, qualify in the same conversation.",
+    watch:"Don't pitch price before you understand what they actually need.",
+    close:"Agree the next step before the chat ends — a call, or a concrete follow-up date."
+  };
+  else if(l.status==="Contacted") p={
+    obj:"Move "+l.name+" from talking to a booked meeting",
+    open: long
+      ? "Hi "+l.name+", it's been a little while since we spoke — are you still looking into this? I have a couple of ideas worth 10 minutes of your time."
+      : "Hi "+l.name+", following up on our last conversation. Do you have 15 minutes this week for a quick call?",
+    emph: long ? "It's been "+ds+" days — acknowledge the gap and bring a fresh angle, not the same message." : "Find out what's really holding their decision back right now.",
+    watch:"Hesitation on budget or timing — surface it early and handle it, don't talk past it.",
+    close:"Lock a specific day and time to talk. Vague 'sometime this week' means no."
+  };
+  else if(l.status==="Meeting Set") p={
+    obj:"Confirm the meeting and arrive prepared to close",
+    open:"Hi "+l.name+", looking forward to our chat! Just confirming we're on. I'll keep it short and useful.",
+    emph:"Preparation — reread the notes and requirements below before the call.",
+    watch:"No-shows. Confirm the morning of the meeting; offer to reschedule instantly if needed.",
+    close:"End the meeting with a clear decision timeline — a yes, a no, or a date for one."
+  };
+  else if(l.status==="On Hold") p={
+    obj:"Re-open the conversation with a fresh reason",
+    open:"Hi "+l.name+", you crossed my mind — "+cn+" has something new that might fit what you were looking at. Worth a quick look?",
+    emph:"New information. A parked lead re-engages for a new offer, a deadline, or a result — never a repeat of the old pitch.",
+    watch:"If they go silent twice more, set one final follow-up and let it rest.",
+    close:"Any small commitment that restarts momentum — a reply, a call, a maybe."
+  };
+  else if(l.status==="Closed Won") p={
+    obj:"Protect the win and open the door to the next one",
+    open:"Hi "+l.name+", great to have everything confirmed! Anything you need from our side, I'm one message away.",
+    emph:"Aftercare. A happy closed customer is the cheapest source of referrals you will ever get.",
+    watch:"Silence after payment — check in before they have a reason to complain.",
+    close:"Ask for a referral or a review once they've seen first results."
+  };
+  else p={
+    obj:"Learn why it was lost, keep the door open",
+    open:"Hi "+l.name+", totally understand. If anything changes down the line, I'd be glad to pick this back up.",
+    emph:"One honest question: what made the difference? The answer improves every future deal.",
+    watch:"Don't burn the bridge — many lost deals return in 3–6 months.",
+    close:"Leave a good last impression and park a follow-up 90 days out."
+  };
+  if(val>0 && l.status!=="Closed Won" && l.status!=="Closed Lost")
+    p.money="On the table: "+money(val)+" — your commission if won: "+money(commissionFor(l))+".";
+  return p;
+}
 
 /* ---------- optimistic ops ---------- */
 function setStatus(id, st){
@@ -275,11 +379,9 @@ function confirmWon(id){
 function toggleUrgent(id){
   const l=D.leads.find(x=>x.id===id); if(!l) return;
   l.urgent=!l.urgent;
-  modal={type:"lead-view",id}; render();
+  modal={type:"lead-view",id,tab:modal&&modal.tab||"prep"}; render();
   toast(l.urgent?"Marked urgent":"Urgency removed");
-  sb.from("leads").update({urgent:l.urgent}).eq("id",id).then(r=>{
-    if(r.error){ toast("Run the v3 SQL line in Supabase first"); }
-  });
+  sb.from("leads").update({urgent:l.urgent}).eq("id",id).then(r=>{ if(r.error){ toast("Run the v3 SQL line in Supabase first"); } });
 }
 function toggleFup(id, done){
   const f=D.followups.find(x=>x.id===id); if(!f) return;
@@ -293,16 +395,18 @@ async function addFollowup(leadId){
   const { data, error }=await sb.from("followups").insert({lead_id:leadId,due_date:due,note}).select();
   if(error){ syncFail(); return; }
   D.followups.push(data[0]); D.followups.sort((a,b)=>a.due_date<b.due_date?-1:1);
-  modal={type:"lead-view",id:leadId}; render(); toast("Follow-up set for "+fmtD(due));
+  modal={type:"lead-view",id:leadId,tab:"fups"}; render(); toast("Follow-up set for "+fmtD(due));
 }
 async function addInteraction(leadId){
   const note=$("#i-note").value.trim();
   if(!note){ errMsg="Write something first."; render(); return; }
   errMsg="";
-  const { data, error }=await sb.from("interactions").insert({lead_id:leadId,kind:$("#i-kind").value,note}).select();
+  const body={lead_id:leadId,kind:$("#i-kind").value,note};
+  let { data, error }=await sb.from("interactions").insert(Object.assign({},body,{created_by:myUsername()})).select();
+  if(error){ ({ data, error }=await sb.from("interactions").insert(body).select()); }
   if(error){ syncFail(); return; }
   D.interactions.unshift(data[0]);
-  modal={type:"lead-view",id:leadId}; render();
+  modal={type:"lead-view",id:leadId,tab:"activity"}; render();
 }
 async function saveClient(id){
   const b={ name:$("#c-name").value.trim(), industry:$("#c-ind").value.trim(),
@@ -329,8 +433,13 @@ async function saveLead(id){
     deal_value:parseFloat($("#l-value").value)||0 };
   if(!b.name||!cid){ errMsg="Lead needs a name and a client."; render(); return; }
   errMsg="";
-  if(id){ const r=await sb.from("leads").update(b).eq("id",id); if(r.error){syncFail();return;} modal={type:"lead-view",id}; }
-  else { const r=await sb.from("leads").insert(b).select(); if(r.error){syncFail();return;} modal=null; toast("Lead added"); }
+  if(id){ const r=await sb.from("leads").update(b).eq("id",id); if(r.error){syncFail();return;} modal={type:"lead-view",id,tab:"details"}; }
+  else {
+    let r=await sb.from("leads").insert(Object.assign({},b,{owner:myUsername()})).select();
+    if(r.error){ r=await sb.from("leads").insert(b).select(); }
+    if(r.error){syncFail();return;}
+    modal=null; toast("Lead added");
+  }
   await loadAll(); render();
 }
 async function delLead(id){
@@ -339,14 +448,14 @@ async function delLead(id){
   modal=null; await hardRefresh(); toast("Lead deleted");
 }
 function saveSettings(){
-  setPref({ name:$("#s-name").value.trim(), cur:$("#s-cur").value, goal:parseFloat($("#s-goal").value)||0 });
+  setPref({ name:$("#s-name").value.trim(), cur:$("#s-cur").value, goal:parseFloat($("#s-goal").value)||0, acc:$("#s-acc").value });
   modal=null; render(); toast("Settings saved");
 }
 function exportCSV(){
-  const rows=[["Client","Lead","Contact","Source","Status","Urgent","Score","Deal value","Commission","Created","Closed"]];
+  const rows=[["Client","Lead","Owner","Contact","Source","Status","Urgent","Score","Deal value","Commission","Created","Closed"]];
   D.leads.forEach(l=>{
     const c=clientOf(l);
-    rows.push([c?c.name:"", l.name, l.contact||"", l.source||"", l.status, l.urgent?"yes":"", score(l),
+    rows.push([c?c.name:"", l.name, l.owner||"", l.contact||"", l.source||"", l.status, l.urgent?"yes":"", score(l),
       Number(l.deal_value)||0, Math.round(commissionFor(l)), (l.created_at||"").slice(0,10), (l.closed_at||"").slice(0,10)]);
   });
   const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
@@ -368,17 +477,17 @@ function render(){
   if(!cfg()){ app.innerHTML=vSetup(); return; }
   if(!user){ app.innerHTML=vLogin(); return; }
   let body="";
-  if(view==="today") body=vToday();
+  if(view==="dash") body=vDash();
   if(view==="pipeline") body=vPipeline();
   if(view==="leads") body=vLeadsList();
   if(view==="clients") body=vClients();
-  app.innerHTML=vTop()+`<div class="fade">${body}</div>`+vBottom()+
+  app.innerHTML=`<div class="shell">${vSide()}<main><div class="fade">${body}</div></main></div>`+vBottom()+
     `<button class="fab" onclick="modal={type:'lead-edit'};render()" aria-label="Add lead">+</button>`+
     (modal?vModal():"");
 }
 function vSetup(){ return `
   <div class="auth"><div class="card">
-    <h2><b style="color:var(--teal)">Scaylr</b> Ops</h2>
+    <h2><b style="color:var(--acc)">Scaylr</b> Ops</h2>
     <p class="meta">One-time setup — paste your Supabase details.</p>
     <label>Project URL</label><input id="su-url" placeholder="https://xxxx.supabase.co">
     <label>Anon public key</label><input id="su-key" placeholder="eyJ...">
@@ -388,10 +497,10 @@ function vSetup(){ return `
 }
 function vLogin(){ return `
   <div class="auth"><div class="card">
-    <h2>Welcome back</h2>
-    <p class="meta">Sign in to Scaylr Ops.</p>
-    <label>Email</label><input id="li-em" type="email" autocomplete="email">
-    <label>Password</label><input id="li-pw" type="password" onkeydown="if(event.key==='Enter')signIn()">
+    <h2><b style="color:var(--acc)">Scaylr</b> Ops</h2>
+    <p class="meta">Sign in with your username and PIN.</p>
+    <label>Username</label><input id="li-un" autocomplete="username" placeholder="pavith">
+    <label>PIN</label><input id="li-pin" type="password" inputmode="numeric" autocomplete="current-password" placeholder="6 digits" onkeydown="if(event.key==='Enter')signIn()">
     <div class="err">${esc(errMsg)}</div>
     <div class="m-foot">
       <button class="ghost" onclick="localStorage.removeItem('scaylr_cfg');location.reload()">Reset</button>
@@ -399,87 +508,123 @@ function vLogin(){ return `
     </div>
   </div></div>`;
 }
-function vTop(){
-  const tabs=[["today","Today"],["pipeline","Pipeline"],["leads","Leads"],["clients","Clients"]];
-  return `<header>
+function vSide(){
+  const fups=D.followups.filter(f=>!f.done);
+  const todo=fups.filter(f=>f.due_date<=today()).length;
+  const d=new Date();
+  const nav=(id,glyph,txt,cnt,warn)=>`<button class="nav ${view===id?'on':''}" onclick="view='${id}';modal=null;render()">
+    <span style="width:18px;text-align:center">${glyph}</span>${txt}${cnt?`<span class="cnt ${warn?'warn':''}">${cnt}</span>`:""}</button>`;
+  return `<aside class="side">
     <div class="logo"><b>SCAYLR</b>&thinsp;OPS</div>
-    <nav class="top">${tabs.map(t=>`<button class="${view===t[0]?'on':''}" onclick="view='${t[0]}';modal=null;render()">${t[1]}</button>`).join("")}</nav>
-    <div class="spacer"></div>
-    <button class="icon-btn" onclick="modal={type:'settings'};render()" title="Settings">⚙</button>
-    <button class="icon-btn" onclick="hardRefresh()" title="Refresh">↻</button>
-    <button class="icon-btn" onclick="signOut()">Sign out</button>
-  </header>`;
+    <div class="date">${d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"short"})} · ${d.toLocaleTimeString(undefined,{hour:"numeric",minute:"2-digit"})}</div>
+    <div class="grp">Pipeline</div>
+    ${nav("dash","▦","Dashboard",todo,todo>0)}
+    ${nav("pipeline","▤","Pipeline Board")}
+    ${nav("leads","≡","All Leads")}
+    <div class="grp">Business</div>
+    ${nav("clients","◇","Clients")}
+    <div class="foot">
+      <div class="me">
+        <span class="init">${initials(myName())}</span>
+        <div><div style="font-size:13.5px;font-weight:600">${esc(myName())}</div><div class="fine">${esc(myUsername())}</div></div>
+      </div>
+      <button class="nav" onclick="modal={type:'settings'};render()"><span style="width:18px;text-align:center">⚙</span>Settings</button>
+      <button class="nav" onclick="signOut()"><span style="width:18px;text-align:center">⏻</span>Sign out</button>
+    </div>
+  </aside>`;
 }
 function vBottom(){
-  const tabs=[["today","◎","Today"],["pipeline","☰","Pipeline"],["leads","≡","Leads"],["clients","◇","Clients"]];
+  const tabs=[["dash","▦","Home"],["pipeline","▤","Board"],["leads","≡","Leads"],["clients","◇","Clients"]];
   return `<nav class="bottom">${tabs.map(t=>`<button class="${view===t[0]?'on':''}" onclick="view='${t[0]}';modal=null;render()"><span class="glyph">${t[1]}</span>${t[2]}</button>`).join("")}</nav>`;
-}
-function leadRow(l, extraRight){
-  const c=clientOf(l);
-  return `<div class="item ${l.urgent?'urgent':''}" onclick="modal={type:'lead-view',id:'${l.id}'};render()">
-    <span class="dot ${dcls(l.status)}"></span>
-    <strong>${esc(l.name)}</strong>
-    ${l.urgent?'<span class="flag">!</span>':''}
-    ${scoreBadge(l)}
-    <span class="fine">${esc(c?c.name:"")}</span>
-    <div class="spacer"></div>${extraRight||""}
-  </div>`;
 }
 function greet(){
   const h=new Date().getHours();
   return h<12?"Good morning":h<17?"Good afternoon":"Good evening";
 }
-function ring(comm){
+function ringBig(comm){
   const goal=Number(pref().goal)||0;
+  const C=2*Math.PI*46;
   if(!goal) return `<div class="ring" onclick="modal={type:'settings'};render()" title="Set a goal">
-    <svg width="88" height="88"><circle cx="44" cy="44" r="38" fill="none" stroke="var(--sur2)" stroke-width="7"/></svg>
+    <svg width="110" height="110"><circle cx="55" cy="55" r="46" fill="none" stroke="var(--sur2)" stroke-width="8"/></svg>
     <div class="pc"><small>SET GOAL</small></div></div>`;
   const p=Math.min(1, comm/goal);
-  const C=2*Math.PI*38;
   return `<div class="ring" onclick="modal={type:'settings'};render()">
-    <svg width="88" height="88">
-      <circle cx="44" cy="44" r="38" fill="none" stroke="var(--sur2)" stroke-width="7"/>
-      <circle cx="44" cy="44" r="38" fill="none" stroke="var(--teal)" stroke-width="7" stroke-linecap="round"
+    <svg width="110" height="110">
+      <circle cx="55" cy="55" r="46" fill="none" stroke="var(--sur2)" stroke-width="8"/>
+      <circle cx="55" cy="55" r="46" fill="none" stroke="var(--acc)" stroke-width="8" stroke-linecap="round"
         stroke-dasharray="${(p*C).toFixed(1)} ${C.toFixed(1)}"/>
     </svg>
     <div class="pc">${Math.round(p*100)}%<small>OF GOAL</small></div></div>`;
 }
-function vToday(){
+function leadRow(l, extraRight){
+  const c=clientOf(l);
+  return `<div class="item ${l.urgent?'urgent':''}" onclick="modal={type:'lead-view',id:'${l.id}',tab:'prep'};render()">
+    <span class="dot ${dcls(l.status)}"></span>
+    <strong>${esc(l.name)}</strong>
+    ${l.urgent?'<span class="flag">!</span>':''}
+    ${scoreBadge(l)}
+    <span class="fine">${esc(c?c.name:"")}</span>
+    ${l.owner?`<span class="init sm" title="${esc(l.owner)}">${initials(l.owner)}</span>`:""}
+    <div class="spacer" style="flex:1"></div>${extraRight||""}
+  </div>`;
+}
+function vDash(){
   const open=D.leads.filter(l=>OPEN_ST.includes(l.status));
+  const active=D.leads.filter(l=>ACTIVE_ST.includes(l.status));
   const fups=D.followups.filter(f=>!f.done);
   const over=fups.filter(f=>f.due_date<today());
   const due=fups.filter(f=>f.due_date===today());
   const won=monthWon();
   const comm=won.reduce((a,l)=>a+commissionFor(l),0);
   const pipeVal=open.reduce((a,l)=>a+(Number(l.deal_value)||0),0);
-  const stale=open.filter(l=>daysSince(l)>=5&&!nextFup(l)&&!l.urgent);
+  const stale=open.filter(l=>daysSince(l)>=5&&!nextFup(l));
   const urgent=D.leads.filter(l=>l.urgent&&ACTIVE_ST.includes(l.status));
-  const d=new Date();
+  const newWeek=D.leads.filter(l=>Date.now()-new Date(l.created_at).getTime()<7*86400000).length;
+  const goal=Number(pref().goal)||0;
   const fupRow=f=>{
     const l=D.leads.find(x=>x.id===f.lead_id); if(!l) return "";
     const c=clientOf(l);
-    return `<div class="item ${l.urgent?'urgent':''}" onclick="modal={type:'lead-view',id:'${l.id}'};render()">
-      <input type="checkbox" style="width:18px;height:18px;accent-color:var(--teal)" onclick="event.stopPropagation()" onchange="toggleFup('${f.id}',this.checked)">
+    return `<div class="item ${l.urgent?'urgent':''}" onclick="modal={type:'lead-view',id:'${l.id}',tab:'prep'};render()">
+      <input type="checkbox" style="width:18px;height:18px;accent-color:var(--acc)" onclick="event.stopPropagation()" onchange="toggleFup('${f.id}',this.checked)">
       <strong>${esc(l.name)}</strong>
-      <span class="fine">${esc(c?c.name:"")}${f.note?" · "+esc(f.note):""}</span>
-      <div class="spacer"></div>
+      <span class="fine">${f.due_date<today()?"Overdue "+Math.floor((new Date(today())-new Date(f.due_date))/86400000)+"d":"Due today"}${f.note?" – "+esc(f.note):""}</span>
+      <div class="spacer" style="flex:1"></div>
       ${phoneOf(l)?`<button class="ghost sm wa" onclick="event.stopPropagation();waOpen('${l.id}')">WhatsApp</button>`:""}
-      <span class="${f.due_date<today()?'over':'todayc'}">${f.due_date<today()?fmtD(f.due_date):"today"}</span>
+      <button class="btn sm" onclick="event.stopPropagation();modal={type:'lead-view',id:'${l.id}',tab:'activity'};render()">Log</button>
     </div>`;
   };
   return `
-  <h1>${greet()}, ${esc(myName())}.</h1>
-  <p class="sub">${d.toLocaleDateString(undefined,{weekday:"long",day:"numeric",month:"long"})} — ${over.length?over.length+" overdue":"nothing overdue"}${due.length?", "+due.length+" due today":""}.</p>
-  <div class="hero">
-    ${ring(comm)}
-    <div class="h"><span class="n money">+${money(comm)}</span><span class="l">Commission this month</span></div>
-    <div class="h"><span class="n">${money(pipeVal)}</span><span class="l">Value in pipeline</span></div>
-    <div class="h"><span class="n">${open.length}</span><span class="l">Open leads</span></div>
+  <div class="topbar">
+    <div>
+      <h1>${greet()}, ${esc(myName())}.</h1>
+      <p class="sub" style="margin-bottom:0">${over.length?`<span class="over">${over.length} follow-ups overdue.</span>`:"Nothing overdue."} ${due.length?due.length+" due today.":""}</p>
+    </div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost sm" onclick="exportCSV()">Export</button>
+    <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
+  </div>
+  <div class="twin" style="margin-top:18px">
+    <div class="panel">
+      <h3>Open pipeline</h3>
+      <div style="font-size:30px;font-weight:700">${money(pipeVal)}</div>
+      <p class="meta" style="margin-top:6px">${open.length} deals in play · push actives toward a meeting to build momentum.</p>
+      <div class="cards" style="margin:16px 0 0">
+        <div class="scard" style="background:var(--sur2)"><div class="v">${over.length+due.length}</div><div class="t">To-do today</div><div class="s">${due.length} due · ${over.length} overdue</div></div>
+        <div class="scard" style="background:var(--sur2)"><div class="v">${active.length}</div><div class="t">Active deals</div><div class="s">${newWeek} new this week</div></div>
+        <div class="scard" style="background:var(--sur2)"><div class="v">${won.length}</div><div class="t">Won in ${new Date().toLocaleDateString(undefined,{month:"long"})}</div><div class="s money">+${money(comm)}</div></div>
+        <div class="scard" style="background:var(--sur2)"><div class="v" style="color:${stale.length?'var(--red)':'inherit'}">${stale.length}</div><div class="t">At risk</div><div class="s">${stale.length?"going cold":"all healthy"}</div></div>
+      </div>
+    </div>
+    <div class="panel" style="text-align:center">
+      <h3>${new Date().toLocaleDateString(undefined,{month:"long"})} target · ${esc(myName())}</h3>
+      ${ringBig(comm)}
+      <p class="meta" style="margin-top:4px">${money(comm)} won${goal?" of "+money(goal):""}</p>
+      <button class="ghost sm" style="margin-top:8px" onclick="modal={type:'settings'};render()">Edit goal</button>
+    </div>
   </div>
   ${urgent.length?`<div class="sect" style="color:var(--red)">Urgent</div><div class="list">${urgent.map(l=>leadRow(l,phoneOf(l)?`<button class="ghost sm wa" onclick="event.stopPropagation();waOpen('${l.id}')">WhatsApp</button>`:"")).join("")}</div>`:""}
-  ${over.length?`<div class="sect">Overdue</div><div class="list">${over.map(fupRow).join("")}</div>`:""}
-  <div class="sect">Today</div>
-  <div class="list">${due.length?due.map(fupRow).join(""):`<div class="empty">No follow-ups due today.</div>`}</div>
+  <div class="sect">Up next ${over.length+due.length?`· ${over.length+due.length} to do`:""}</div>
+  <div class="list">${(over.concat(due)).length?over.concat(due).map(fupRow).join(""):`<div class="empty">Nothing due. Set follow-ups so leads never go quiet.</div>`}</div>
   ${stale.length?`<div class="sect">Going cold — no touch in 5+ days</div><div class="list">${stale.map(l=>leadRow(l,`<span class="stale">${daysSince(l)}d silent</span>`)).join("")}</div>`:""}
   <div class="sect">This month by client</div>
   <div class="list">
@@ -489,7 +634,7 @@ function vToday(){
       return `<div class="item" onclick="boardClient='${c.id}';view='pipeline';render()">
         <strong>${esc(c.name)}</strong>
         <span class="fine">${w.length} closed</span>
-        <div class="spacer"></div><span class="money">+${money(cm)}</span>
+        <div class="spacer" style="flex:1"></div><span class="money">+${money(cm)}</span>
       </div>`;
     }).join(""):`<div class="empty">Add your first client in the Clients tab.</div>`}
   </div>`;
@@ -505,9 +650,12 @@ function vPipeline(){
     return {st, ls};
   });
   return `
-  <h1>Pipeline</h1>
-  <p class="sub">Drag a card to move it. Closed columns show the last 30 days.</p>
-  <div class="seg" style="margin-bottom:16px">
+  <div class="topbar">
+    <div><h1>Pipeline Board</h1><p class="sub" style="margin-bottom:0">Drag a card to move it. Closed columns show 30 days.</p></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
+  </div>
+  <div class="seg" style="margin:16px 0">
     <button class="${boardClient==='all'?'on':''}" onclick="boardClient='all';render()">All</button>
     ${D.clients.map(c=>`<button class="${boardClient===c.id?'on':''}" onclick="boardClient='${c.id}';render()">${esc(c.name)}</button>`).join("")}
   </div>
@@ -517,7 +665,7 @@ function vPipeline(){
         <h4><span>${st}</span><span>${ls.length}</span></h4>
         ${ls.map(l=>{
           const c=clientOf(l), nf=nextFup(l), ds=daysSince(l);
-          return `<div class="cardl ${l.urgent?'urgent':''}" draggable="true" ondragstart="dragStart(event,'${l.id}')" onclick="modal={type:'lead-view',id:'${l.id}'};render()">
+          return `<div class="cardl ${l.urgent?'urgent':''}" draggable="true" ondragstart="dragStart(event,'${l.id}')" onclick="modal={type:'lead-view',id:'${l.id}',tab:'prep'};render()">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
               <span class="nm">${esc(l.name)}</span>${scoreBadge(l)}
             </div>
@@ -541,9 +689,13 @@ function vLeadsList(){
   if(flt.src!=="all") ls=ls.filter(l=>l.source===flt.src);
   ls.sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)||score(b)-score(a));
   return `
-  <h1>Leads <span class="fine" style="font-size:16px">${ls.length}</span></h1>
-  <p class="sub">Sorted by urgency, then score.</p>
-  <div class="toolbar">
+  <div class="topbar">
+    <div><h1>All Leads <span class="fine" style="font-size:16px">${ls.length}</span></h1><p class="sub" style="margin-bottom:0">Sorted by urgency, then score.</p></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost sm" onclick="exportCSV()">Export CSV</button>
+    <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
+  </div>
+  <div class="toolbar" style="margin-top:16px">
     <input type="search" placeholder="Search name or number…" value="${esc(flt.q)}" oninput="flt.q=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
     <select onchange="flt.st=this.value;render()">
       <option value="Active" ${flt.st==='Active'?'selected':''}>Active</option>
@@ -554,7 +706,6 @@ function vLeadsList(){
       <option value="all">All sources</option>
       ${SOURCES.map(s=>`<option ${flt.src===s?'selected':''}>${s}</option>`).join("")}
     </select>
-    <button class="ghost sm" onclick="exportCSV()">Export CSV</button>
   </div>
   <div class="list">
     ${ls.length?ls.map(l=>{
@@ -569,10 +720,12 @@ function vLeadsList(){
 function vClients(){
   const won=monthWon();
   return `
-  <h1>Clients</h1>
-  <p class="sub">The businesses that pay you.</p>
-  <div style="margin-bottom:14px"><button class="btn sm" onclick="modal={type:'client-edit'};render()">+ New client</button></div>
-  <div class="list">
+  <div class="topbar">
+    <div><h1>Clients</h1><p class="sub" style="margin-bottom:0">The businesses that pay you.</p></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="btn sm" onclick="modal={type:'client-edit'};render()">+ New client</button>
+  </div>
+  <div class="list" style="margin-top:16px">
     ${D.clients.length?D.clients.map(c=>{
       const open=D.leads.filter(l=>l.client_id===c.id&&ACTIVE_ST.includes(l.status)).length;
       const cm=won.filter(l=>l.client_id===c.id).reduce((a,l)=>a+commissionFor(l),0);
@@ -581,7 +734,7 @@ function vClients(){
           <strong>${esc(c.name)}</strong>
           <div class="fine">${esc(c.industry||"")} · ${money(c.base_fee)}/mo base · ${Number(c.commission_pct)}%</div>
         </div>
-        <div class="spacer"></div>
+        <div class="spacer" style="flex:1"></div>
         <div style="text-align:right">
           <div class="money">+${money(cm)}</div>
           <div class="fine">${open} open</div>
@@ -605,11 +758,13 @@ function mSettings(){
   const p=pref();
   return `<h2 style="font-size:19px">Settings</h2>
   <label>Your name (for the greeting)</label><input id="s-name" value="${esc(p.name||myName())}">
+  <label>Accent color</label>
+  <select id="s-acc"><option value="teal" ${p.acc!=="orange"?"selected":""}>Scaylr teal</option><option value="orange" ${p.acc==="orange"?"selected":""}>BB orange</option></select>
   <label>Currency</label>
   <select id="s-cur"><option ${CUR()==="LKR"?"selected":""}>LKR</option><option ${CUR()==="USD"?"selected":""}>USD</option></select>
   <label>Monthly commission goal (${CUR()})</label>
   <input id="s-goal" type="number" inputmode="decimal" value="${p.goal||""}" placeholder="e.g. 250000">
-  <p class="fine" style="margin-top:8px">These are saved on this device only.</p>
+  <p class="fine" style="margin-top:8px">Saved on this device only.</p>
   <div class="m-foot">
     <button class="ghost" onclick="modal=null;render()">Cancel</button>
     <button class="btn" onclick="saveSettings()">Save</button>
@@ -624,7 +779,7 @@ function mCloseWon(){
   <input id="cw-val" type="number" inputmode="decimal" value="${Number(l.deal_value)||""}" placeholder="0" onkeydown="if(event.key==='Enter')confirmWon('${l.id}')">
   <p class="fine" style="margin-top:8px">Your ${c?Number(c.commission_pct):10}% commission is calculated automatically.</p>
   <div class="m-foot">
-    <button class="ghost" onclick="modal={type:'lead-view',id:'${l.id}'};render()">Cancel</button>
+    <button class="ghost" onclick="modal={type:'lead-view',id:'${l.id}',tab:'prep'};render()">Cancel</button>
     <button class="btn" onclick="confirmWon('${l.id}')">Mark won</button>
   </div>`;
 }
@@ -643,7 +798,7 @@ function mClient(){
   <div class="err">${esc(errMsg)}</div>
   <div class="m-foot">
     ${modal.id?`<button class="ghost danger" onclick="delClient('${modal.id}')">Delete</button>`:""}
-    <div class="spacer"></div>
+    <div class="spacer" style="flex:1"></div>
     <button class="ghost" onclick="modal=null;errMsg='';render()">Cancel</button>
     <button class="btn" onclick="saveClient(${modal.id?`'${modal.id}'`:"null"})">Save</button>
   </div>`;
@@ -668,62 +823,89 @@ function mLeadEdit(){
   <label>Notes</label><textarea id="l-notes">${esc(l.notes||"")}</textarea>
   <div class="err">${esc(errMsg)}</div>
   <div class="m-foot">
-    <button class="ghost" onclick="modal=${modal.id?`{type:'lead-view',id:'${modal.id}'}`:"null"};errMsg='';render()">Cancel</button>
+    <button class="ghost" onclick="modal=${modal.id?`{type:'lead-view',id:'${modal.id}',tab:'details'}`:"null"};errMsg='';render()">Cancel</button>
     <button class="btn" onclick="saveLead(${modal.id?`'${modal.id}'`:"null"})">Save</button>
   </div>`;
 }
 function mLeadView(){
   const l=D.leads.find(x=>x.id===modal.id); if(!l){ modal=null; return ""; }
+  const tab=modal.tab||"prep";
   const c=clientOf(l);
-  const fups=D.followups.filter(f=>f.lead_id===l.id).sort((a,b)=>a.due_date<b.due_date?-1:1);
-  const ints=D.interactions.filter(i=>i.lead_id===l.id);
-  const extras=Object.entries(l.extra||{}).filter(([k,v])=>v);
   const ds=daysSince(l);
   const p=phoneOf(l);
+  const s=score(l);
+  const fups=D.followups.filter(f=>f.lead_id===l.id).sort((a,b)=>a.due_date<b.due_date?-1:1);
+  const ints=D.interactions.filter(i=>i.lead_id===l.id);
+  const gp=gamePlan(l);
+  const extras=Object.entries(l.extra||{}).filter(([k,v])=>v);
+  const tabBtn=(id,txt,n)=>`<button class="${tab===id?'on':''}" onclick="modal.tab='${id}';render()">${txt}${n?` (${n})`:""}</button>`;
+  let body="";
+  if(tab==="prep") body=`
+    <div class="gp">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span class="k" style="color:var(--acc)">◎ CALL GAME PLAN</span>
+        <span class="fine">win likelihood ${s}%</span>
+      </div>
+      <div class="gpbar"><i style="width:${s}%"></i></div>
+      ${gp.money?`<p class="v" style="margin:8px 0 2px"><span class="money">${esc(gp.money)}</span></p>`:""}
+      <div class="row"><span class="num">1</span><div><div class="k">YOUR OBJECTIVE</div><div class="v">${esc(gp.obj)}</div></div></div>
+      <div class="row"><span class="num">2</span><div style="flex:1"><div class="k">SUGGESTED OPENER <button class="copy" onclick="copyTxt(${JSON.stringify(gp.open).replace(/"/g,"&quot;")})">COPY</button></div><div class="v">"${esc(gp.open)}"</div></div></div>
+      <div class="row"><span class="num">3</span><div><div class="k">EMPHASIZE</div><div class="v">${esc(gp.emph)}</div></div></div>
+      <div class="row"><span class="num">4</span><div><div class="k">WATCH OUT FOR</div><div class="v">${esc(gp.watch)}</div></div></div>
+      <div class="row"><span class="num">5</span><div><div class="k">CLOSE ON</div><div class="v">${esc(gp.close)}</div></div></div>
+    </div>
+    ${ints.length?`<p class="fine" style="margin-top:12px">Last interaction: ${esc(ints[0].kind)} — ${esc(ints[0].note)}</p>`:""}`;
+  if(tab==="activity") body=`
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <select id="i-kind" style="width:110px"><option>DM</option><option>WhatsApp</option><option>Call</option><option>Meeting</option><option>Note</option></select>
+      <input id="i-note" placeholder="What happened?" style="flex:1" onkeydown="if(event.key==='Enter')addInteraction('${l.id}')">
+      <button class="btn sm" onclick="addInteraction('${l.id}')">Log</button>
+    </div>
+    ${ints.length?ints.map(i=>`<div class="int"><span class="chip">${esc(i.kind)}</span> <span class="fine">${new Date(i.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short"})}${i.created_by?" · "+esc(i.created_by):""}</span><div style="margin-top:4px">${esc(i.note)}</div></div>`).join(""):`<p class="fine">Nothing logged yet.</p>`}`;
+  if(tab==="fups") body=`
+    ${fups.length?fups.map(f=>`
+      <div style="display:flex;gap:10px;align-items:center;padding:5px 0">
+        <input type="checkbox" ${f.done?"checked":""} style="width:17px;height:17px;accent-color:var(--acc)" onchange="toggleFup('${f.id}',this.checked);modal={type:'lead-view',id:'${l.id}',tab:'fups'}">
+        <span class="${f.done?'fine':(f.due_date<today()?'over':f.due_date===today()?'todayc':'meta')}" style="${f.done?'text-decoration:line-through':''}">${fmtD(f.due_date)}</span>
+        <span class="fine">${esc(f.note||"")}</span>
+      </div>`).join(""):`<p class="fine">None yet — set one so this lead never goes cold.</p>`}
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <input id="f-due" type="date" value="${today()}" style="width:150px">
+      <input id="f-note" placeholder="e.g. send package details" style="flex:1">
+      <button class="btn sm" onclick="addFollowup('${l.id}')">Add</button>
+    </div>`;
+  if(tab==="details") body=`
+    <p style="margin:4px 0"><span class="fine">Contact</span> &nbsp;${esc(l.contact||"—")}</p>
+    <p style="margin:4px 0"><span class="fine">Source</span> &nbsp;${esc(l.source||"—")}</p>
+    <p style="margin:4px 0"><span class="fine">Owner</span> &nbsp;${esc(l.owner||"—")}</p>
+    <p style="margin:4px 0"><span class="fine">Added</span> &nbsp;${new Date(l.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</p>
+    ${Number(l.deal_value)?`<p style="margin:4px 0"><span class="fine">Deal</span> &nbsp;<span class="money">${money(l.deal_value)}</span> → commission <span class="money">${money(commissionFor(l))}</span>${l.status!=="Closed Won"?' <span class="fine">(if won)</span>':''}</p>`:""}
+    ${extras.map(([k,v])=>`<p style="margin:4px 0"><span class="fine">${esc(k)}</span> &nbsp;${esc(v)}</p>`).join("")}
+    ${l.notes?`<div class="sect" style="margin-top:14px">Notes</div><p class="meta" style="white-space:pre-wrap">${esc(l.notes)}</p>`:""}
+    <div style="margin-top:16px"><button class="ghost sm" onclick="modal={type:'lead-edit',id:'${l.id}'};render()">Edit details</button></div>`;
   return `
   <div style="display:flex;align-items:flex-start;gap:12px">
     <div>
       <h2 style="font-size:20px">${esc(l.name)} ${l.urgent?'<span class="flag">!</span>':''} ${scoreBadge(l)}</h2>
-      <p class="meta" style="margin-top:2px">${esc(c?c.name:"")} · ${esc(l.source)}${l.contact?" · "+esc(l.contact):""}${ACTIVE_ST.includes(l.status)?` · <span class="${ds>=5?'stale':'fine'}">${ds===0?"touched today":ds+"d since last touch"}</span>`:""}</p>
+      <p class="meta" style="margin-top:2px">${esc(c?c.name:"")} · ${esc(l.source)}${l.contact?" · "+esc(l.contact):""}${ACTIVE_ST.includes(l.status)?` · <span class="${ds>=5?'stale':'fine'}">${ds===0?"touched today":"in "+l.status+" for "+ds+"d"}</span>`:""}</p>
     </div>
-    <div class="spacer"></div>
-    <button class="ghost sm" onclick="modal={type:'lead-edit',id:'${l.id}'};render()">Edit</button>
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost sm" onclick="modal=null;errMsg='';render()">✕</button>
   </div>
   <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap">
     ${p?`<button class="ghost sm wa" onclick="waOpen('${l.id}')">WhatsApp</button><button class="ghost sm" onclick="callOpen('${l.id}')">Call</button>`:""}
     <button class="ghost sm ${l.urgent?'urg':''}" onclick="toggleUrgent('${l.id}')">${l.urgent?"Urgent ✓":"Mark urgent"}</button>
+    <button class="ghost sm danger" onclick="delLead('${l.id}')">Delete</button>
   </div>
-  <div class="seg">${STATUSES.map(s=>`<button class="${l.status===s?'on':''}" onclick="setStatus('${l.id}','${s}')">${s}</button>`).join("")}</div>
-  ${Number(l.deal_value)?`<p style="margin-top:12px">Deal <span class="money">${money(l.deal_value)}</span> → commission <span class="money">${money(commissionFor(l))}</span>${l.status!=="Closed Won"?' <span class="fine">(if won)</span>':''}</p>`:""}
-  ${extras.length?`<div style="margin-top:12px">${extras.map(([k,v])=>`<p style="font-size:13.5px;margin:3px 0"><span class="fine">${esc(k)}</span> &nbsp;${esc(v)}</p>`).join("")}</div>`:""}
-  ${l.notes?`<p class="meta" style="margin-top:10px;white-space:pre-wrap">${esc(l.notes)}</p>`:""}
-
-  <div class="sect">Follow-ups</div>
-  ${fups.length?fups.map(f=>`
-    <div style="display:flex;gap:10px;align-items:center;padding:5px 0">
-      <input type="checkbox" ${f.done?"checked":""} style="width:17px;height:17px;accent-color:var(--teal)" onchange="toggleFup('${f.id}',this.checked);modal={type:'lead-view',id:'${l.id}'}">
-      <span class="${f.done?'fine':(f.due_date<today()?'over':f.due_date===today()?'todayc':'meta')}" style="${f.done?'text-decoration:line-through':''}">${fmtD(f.due_date)}</span>
-      <span class="fine">${esc(f.note||"")}</span>
-    </div>`).join(""):`<p class="fine">None yet — set one so this lead never goes cold.</p>`}
-  <div style="display:flex;gap:8px;margin-top:10px">
-    <input id="f-due" type="date" value="${today()}" style="width:150px">
-    <input id="f-note" placeholder="e.g. send package details" style="flex:1">
-    <button class="btn sm" onclick="addFollowup('${l.id}')">Add</button>
+  <div class="seg">${STATUSES.map(st=>`<button class="${l.status===st?'on':''}" onclick="setStatus('${l.id}','${st}')">${st}</button>`).join("")}</div>
+  <div class="tabs">
+    ${tabBtn("prep","Call Prep")}
+    ${tabBtn("activity","Activity",ints.length)}
+    ${tabBtn("fups","Follow-Ups",fups.filter(f=>!f.done).length)}
+    ${tabBtn("details","Details")}
   </div>
-
-  <div class="sect">Activity</div>
-  <div style="display:flex;gap:8px;margin-bottom:6px">
-    <select id="i-kind" style="width:110px"><option>DM</option><option>WhatsApp</option><option>Call</option><option>Meeting</option><option>Note</option></select>
-    <input id="i-note" placeholder="What happened?" style="flex:1" onkeydown="if(event.key==='Enter')addInteraction('${l.id}')">
-    <button class="btn sm" onclick="addInteraction('${l.id}')">Log</button>
-  </div>
-  ${ints.map(i=>`<div class="int"><span class="chip">${esc(i.kind)}</span> <span class="fine">${new Date(i.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short"})}</span><div style="margin-top:4px">${esc(i.note)}</div></div>`).join("")}
-  <div class="err">${esc(errMsg)}</div>
-  <div class="m-foot">
-    <button class="ghost danger" onclick="delLead('${l.id}')">Delete</button>
-    <div class="spacer"></div>
-    <button class="ghost" onclick="modal=null;errMsg='';render()">Close</button>
-  </div>`;
+  <div class="tabbody">${body}</div>
+  <div class="err">${esc(errMsg)}</div>`;
 }
 
 boot();
