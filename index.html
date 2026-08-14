@@ -171,7 +171,7 @@ const OPEN_ST = ["New","Contacted","Meeting Set"];
 const ACTIVE_ST = ["New","Contacted","Meeting Set","On Hold"];
 const SOURCES = ["Instagram","Facebook","WhatsApp","Referral","Other"];
 const PIN_DOMAIN = "fusionops.local";
-let sb=null, user=null, D={clients:[],leads:[],followups:[],interactions:[]}, view="dash", modal=null, errMsg="", boardClient="all", dragId=null;
+let sb=null, user=null, D={clients:[],leads:[],followups:[],interactions:[],team:[]}, view="dash", modal=null, errMsg="", boardClient="all", dragId=null;
 let flt = { q:"", st:"Active", src:"all" };
 
 const $ = s => document.querySelector(s);
@@ -188,6 +188,21 @@ const cfg = () => { try { return JSON.parse(localStorage.getItem("scaylr_cfg")||
 const myUsername = () => user && user.email ? user.email.split("@")[0] : "me";
 const myName = () => pref().name || myUsername().split(/[._-]/)[0].replace(/^./,c=>c.toUpperCase());
 const initials = s => { const p=String(s||"").split(/[._\s-]+/).filter(Boolean); return ((p[0]||" ")[0]+(p[1]?p[1][0]:(p[0]||"  ")[1]||"")).toUpperCase(); };
+const teamRec = un => (D.team||[]).find(t=>t.username===un);
+const dispName = un => { const t=teamRec(un); return t&&t.display_name?t.display_name:un; };
+const assigneeOf = l => l.assigned_to || l.owner || "";
+function getScope(){ const p=pref().scope; if(p) return p; const t=teamRec(myUsername()); return t&&t.client_id?"mine":"all"; }
+function setScope(s){ setPref({scope:s}); render(); }
+function inScope(l){ return getScope()==="all" || assigneeOf(l)===myUsername(); }
+function scopeSeg(){ const sc=getScope(); return `<div class="seg"><button class="${sc==='mine'?'on':''}" onclick="setScope('mine')">Mine</button><button class="${sc==='all'?'on':''}" onclick="setScope('all')">Everyone</button></div>`; }
+function assignLead(id,un){
+  const l=D.leads.find(x=>x.id===id); if(!l) return;
+  l.assigned_to=un;
+  modal={type:"lead-view",id,tab:(modal&&modal.tab)||"details"}; render();
+  toast(un?"Assigned to "+dispName(un):"Unassigned");
+  sb.from("leads").update({assigned_to:un}).eq("id",id).then(r=>{ if(r.error) toast("Run the v5 SQL in Supabase first"); });
+}
+function avatarOf(l){ const a=assigneeOf(l); return a?`<span class="init sm" title="${esc(dispName(a))}">${initials(dispName(a))}</span>`:""; }
 
 function applyAccent(){
   const orange = pref().acc==="orange";
@@ -215,13 +230,14 @@ async function boot(){
   render();
 }
 async function loadAll(){
-  const [c,l,f,i]=await Promise.all([
+  const [c,l,f,i,t]=await Promise.all([
     sb.from("clients").select("*").order("created_at"),
     sb.from("leads").select("*").order("created_at",{ascending:false}),
     sb.from("followups").select("*").order("due_date"),
-    sb.from("interactions").select("*").order("created_at",{ascending:false})
+    sb.from("interactions").select("*").order("created_at",{ascending:false}),
+    sb.from("team").select("*").order("created_at")
   ]);
-  D={ clients:c.data||[], leads:l.data||[], followups:f.data||[], interactions:i.data||[] };
+  D={ clients:c.data||[], leads:l.data||[], followups:f.data||[], interactions:i.data||[], team:t.data||[] };
 }
 async function hardRefresh(){ await loadAll(); render(); }
 function syncFail(){ toast("Sync failed — reloading"); hardRefresh(); }
@@ -436,7 +452,8 @@ async function saveLead(id){
   errMsg="";
   if(id){ const r=await sb.from("leads").update(b).eq("id",id); if(r.error){syncFail();return;} modal={type:"lead-view",id,tab:"details"}; }
   else {
-    let r=await sb.from("leads").insert(Object.assign({},b,{owner:myUsername()})).select();
+    let r=await sb.from("leads").insert(Object.assign({},b,{owner:myUsername(),assigned_to:myUsername()})).select();
+    if(r.error){ r=await sb.from("leads").insert(Object.assign({},b,{owner:myUsername()})).select(); }
     if(r.error){ r=await sb.from("leads").insert(b).select(); }
     if(r.error){syncFail();return;}
     modal=null; toast("Lead added");
@@ -482,6 +499,7 @@ function render(){
   if(view==="pipeline") body=vPipeline();
   if(view==="leads") body=vLeadsList();
   if(view==="clients") body=vClients();
+  if(view==="team") body=vTeam();
   app.innerHTML=`<div class="shell">${vSide()}<main><div class="fade">${body}</div></main></div>`+vBottom()+
     `<button class="fab" onclick="modal={type:'lead-edit'};render()" aria-label="Add lead">+</button>`+
     (modal?vModal():"");
@@ -524,6 +542,7 @@ function vSide(){
     ${nav("leads","≡","All Leads")}
     <div class="grp">Business</div>
     ${nav("clients","◇","Clients")}
+    ${nav("team","◉","Team")}
     <div class="foot">
       <div class="me">
         <span class="init">${initials(myName())}</span>
@@ -535,7 +554,7 @@ function vSide(){
   </aside>`;
 }
 function vBottom(){
-  const tabs=[["dash","▦","Home"],["pipeline","▤","Board"],["leads","≡","Leads"],["clients","◇","Clients"]];
+  const tabs=[["dash","▦","Home"],["pipeline","▤","Board"],["leads","≡","Leads"],["clients","◇","Clients"],["team","◉","Team"]];
   return `<nav class="bottom">${tabs.map(t=>`<button class="${view===t[0]?'on':''}" onclick="view='${t[0]}';modal=null;render()"><span class="glyph">${t[1]}</span>${t[2]}</button>`).join("")}</nav>`;
 }
 function greet(){
@@ -565,22 +584,23 @@ function leadRow(l, extraRight){
     ${l.urgent?'<span class="flag">!</span>':''}
     ${scoreBadge(l)}
     <span class="fine">${esc(c?c.name:"")}</span>
-    ${l.owner?`<span class="init sm" title="${esc(l.owner)}">${initials(l.owner)}</span>`:""}
+    ${avatarOf(l)}
     <div class="spacer" style="flex:1"></div>${extraRight||""}
   </div>`;
 }
 function vDash(){
-  const open=D.leads.filter(l=>OPEN_ST.includes(l.status));
-  const active=D.leads.filter(l=>ACTIVE_ST.includes(l.status));
-  const fups=D.followups.filter(f=>!f.done);
+  const scoped=D.leads.filter(inScope);
+  const open=scoped.filter(l=>OPEN_ST.includes(l.status));
+  const active=scoped.filter(l=>ACTIVE_ST.includes(l.status));
+  const fups=D.followups.filter(f=>{ if(f.done) return false; const fl=D.leads.find(x=>x.id===f.lead_id); return fl&&inScope(fl); });
   const over=fups.filter(f=>f.due_date<today());
   const due=fups.filter(f=>f.due_date===today());
-  const won=monthWon();
+  const won=monthWon().filter(inScope);
   const comm=won.reduce((a,l)=>a+commissionFor(l),0);
   const pipeVal=open.reduce((a,l)=>a+(Number(l.deal_value)||0),0);
   const stale=open.filter(l=>daysSince(l)>=5&&!nextFup(l));
-  const urgent=D.leads.filter(l=>l.urgent&&ACTIVE_ST.includes(l.status));
-  const newWeek=D.leads.filter(l=>Date.now()-new Date(l.created_at).getTime()<7*86400000).length;
+  const urgent=scoped.filter(l=>l.urgent&&ACTIVE_ST.includes(l.status));
+  const newWeek=scoped.filter(l=>Date.now()-new Date(l.created_at).getTime()<7*86400000).length;
   const goal=Number(pref().goal)||0;
   const fupRow=f=>{
     const l=D.leads.find(x=>x.id===f.lead_id); if(!l) return "";
@@ -601,6 +621,7 @@ function vDash(){
       <p class="sub" style="margin-bottom:0">${over.length?`<span class="over">${over.length} follow-ups overdue.</span>`:"Nothing overdue."} ${due.length?due.length+" due today.":""}</p>
     </div>
     <div class="spacer" style="flex:1"></div>
+    ${scopeSeg()}
     <button class="ghost sm" onclick="exportCSV()">Export</button>
     <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
   </div>
@@ -641,7 +662,7 @@ function vDash(){
   </div>`;
 }
 function vPipeline(){
-  let leads=D.leads;
+  let leads=D.leads.filter(inScope);
   if(boardClient!=="all") leads=leads.filter(l=>l.client_id===boardClient);
   const monthAgo=Date.now()-30*86400000;
   const cols=STATUSES.map(st=>{
@@ -656,9 +677,12 @@ function vPipeline(){
     <div class="spacer" style="flex:1"></div>
     <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
   </div>
-  <div class="seg" style="margin:16px 0">
-    <button class="${boardClient==='all'?'on':''}" onclick="boardClient='all';render()">All</button>
-    ${D.clients.map(c=>`<button class="${boardClient===c.id?'on':''}" onclick="boardClient='${c.id}';render()">${esc(c.name)}</button>`).join("")}
+  <div style="display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin:16px 0">
+    <div class="seg" style="margin-top:0">
+      <button class="${boardClient==='all'?'on':''}" onclick="boardClient='all';render()">All</button>
+      ${D.clients.map(c=>`<button class="${boardClient===c.id?'on':''}" onclick="boardClient='${c.id}';render()">${esc(c.name)}</button>`).join("")}
+    </div>
+    ${scopeSeg()}
   </div>
   <div class="board">
     ${cols.map(({st,ls})=>`
@@ -668,7 +692,8 @@ function vPipeline(){
           const c=clientOf(l), nf=nextFup(l), ds=daysSince(l);
           return `<div class="cardl ${l.urgent?'urgent':''}" draggable="true" ondragstart="dragStart(event,'${l.id}')" onclick="modal={type:'lead-view',id:'${l.id}',tab:'prep'};render()">
             <div style="display:flex;justify-content:space-between;align-items:center;gap:6px">
-              <span class="nm">${esc(l.name)}</span>${scoreBadge(l)}
+              <span class="nm">${esc(l.name)}</span>
+              <span style="display:flex;gap:5px;align-items:center">${avatarOf(l)}${scoreBadge(l)}</span>
             </div>
             <div class="fine" style="margin-top:2px">${esc(c?c.name:"")}${Number(l.deal_value)?" · "+money(l.deal_value):""}</div>
             <div style="margin-top:8px;display:flex;justify-content:space-between;align-items:center">
@@ -683,7 +708,7 @@ function vPipeline(){
   </div>`;
 }
 function vLeadsList(){
-  let ls=D.leads.slice();
+  let ls=D.leads.filter(inScope);
   if(flt.q){ const q=flt.q.toLowerCase(); ls=ls.filter(l=>(l.name||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q)); }
   if(flt.st==="Active") ls=ls.filter(l=>ACTIVE_ST.includes(l.status));
   else if(flt.st!=="all") ls=ls.filter(l=>l.status===flt.st);
@@ -697,6 +722,7 @@ function vLeadsList(){
     <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
   </div>
   <div class="toolbar" style="margin-top:16px">
+    ${scopeSeg()}
     <input type="search" placeholder="Search name or number…" value="${esc(flt.q)}" oninput="flt.q=this.value;render();this.focus();this.setSelectionRange(this.value.length,this.value.length)">
     <select onchange="flt.st=this.value;render()">
       <option value="Active" ${flt.st==='Active'?'selected':''}>Active</option>
@@ -745,6 +771,66 @@ function vClients(){
   </div>`;
 }
 
+function vTeam(){
+  return `
+  <div class="topbar">
+    <div><h1>Team</h1><p class="sub" style="margin-bottom:0">Who works in the system, and which client they handle.</p></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="btn sm" onclick="modal={type:'team-edit'};render()">+ Add member</button>
+  </div>
+  <div class="list" style="margin-top:16px">
+    ${D.team.length?D.team.map(t=>{
+      const c=D.clients.find(x=>x.id===t.client_id);
+      const mine=D.leads.filter(l=>assigneeOf(l)===t.username&&ACTIVE_ST.includes(l.status)).length;
+      const wonC=monthWon().filter(l=>assigneeOf(l)===t.username).reduce((a,l)=>a+commissionFor(l),0);
+      return `<div class="item" onclick="modal={type:'team-edit',id:'${t.id}'};render()">
+        <span class="init">${initials(t.display_name||t.username)}</span>
+        <div>
+          <strong>${esc(t.display_name||t.username)}</strong>
+          <div class="fine">@${esc(t.username)}${c?" · handles "+esc(c.name):" · all clients"}</div>
+        </div>
+        <div class="spacer" style="flex:1"></div>
+        <div style="text-align:right">
+          <div class="money">+${money(wonC)}</div>
+          <div class="fine">${mine} active leads</div>
+        </div>
+      </div>`;
+    }).join(""):`<div class="empty">No team members yet. Add yourself first — username must match the login username.</div>`}
+  </div>
+  <p class="fine" style="margin-top:12px">Reminder: adding someone here does not create their login. Create the login in Supabase (Authentication → Users → username@fusionops.local + PIN with 00 added), then add them here with the same username.</p>`;
+}
+async function saveTeam(id){
+  const b={ username:$("#t-un").value.trim().toLowerCase().replace(/\s+/g,""), display_name:$("#t-dn").value.trim(), client_id:$("#t-cl").value||null };
+  if(!b.username){ errMsg="Username is required."; render(); return; }
+  errMsg="";
+  let r;
+  if(id) r=await sb.from("team").update(b).eq("id",id);
+  else r=await sb.from("team").insert(b);
+  if(r.error){ errMsg=r.error.message.includes("relation")?"Run the v5 SQL in Supabase first.":r.error.message; render(); return; }
+  modal=null; await hardRefresh(); toast("Team saved");
+}
+async function delTeam(id){
+  if(!confirm("Remove this team member? Their leads stay, just unassigned from them.")) return;
+  await sb.from("team").delete().eq("id",id);
+  modal=null; await hardRefresh(); toast("Removed");
+}
+function mTeam(){
+  const t=modal.id?D.team.find(x=>x.id===modal.id):{};
+  return `<h2 style="font-size:19px">${modal.id?"Edit member":"Add team member"}</h2>
+  <label>Username (must match their login)</label><input id="t-un" value="${esc(t.username||"")}" placeholder="kasun">
+  <label>Display name</label><input id="t-dn" value="${esc(t.display_name||"")}" placeholder="Kasun Perera">
+  <label>Handles client (optional)</label>
+  <select id="t-cl"><option value="">All clients</option>${D.clients.map(c=>`<option value="${c.id}" ${t.client_id===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>
+  <p class="fine" style="margin-top:8px">If set, their "Mine" view focuses on this client and new leads they add default to it.</p>
+  <div class="err">${esc(errMsg)}</div>
+  <div class="m-foot">
+    ${modal.id?`<button class="ghost danger" onclick="delTeam('${modal.id}')">Remove</button>`:""}
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost" onclick="modal=null;errMsg='';render()">Cancel</button>
+    <button class="btn" onclick="saveTeam(${modal.id?`'${modal.id}'`:"null"})">Save</button>
+  </div>`;
+}
+
 /* ---------- modals ---------- */
 function vModal(){
   let inner="";
@@ -753,6 +839,7 @@ function vModal(){
   if(modal.type==="lead-view") inner=mLeadView();
   if(modal.type==="close-won") inner=mCloseWon();
   if(modal.type==="settings") inner=mSettings();
+  if(modal.type==="team-edit") inner=mTeam();
   return `<div class="modal-bg" onclick="if(event.target===this){modal=null;errMsg='';render()}"><div class="sheet"><div class="grab"></div>${inner}</div></div>`;
 }
 function mSettings(){
@@ -806,7 +893,8 @@ function mClient(){
 }
 function mLeadEdit(){
   const l=modal.id?D.leads.find(x=>x.id===modal.id):{extra:{}};
-  const selId=modal.tmpClient||l.client_id||(D.clients[0]&&D.clients[0].id)||"";
+  const myT=teamRec(myUsername());
+  const selId=modal.tmpClient||l.client_id||(myT&&myT.client_id)||(D.clients[0]&&D.clients[0].id)||"";
   const client=D.clients.find(c=>c.id===selId);
   return `<h2 style="font-size:19px">${modal.id?"Edit lead":"New lead"}</h2>
   <label>Client</label>
@@ -876,9 +964,14 @@ function mLeadView(){
       <button class="btn sm" onclick="addFollowup('${l.id}')">Add</button>
     </div>`;
   if(tab==="details") body=`
-    <p style="margin:4px 0"><span class="fine">Contact</span> &nbsp;${esc(l.contact||"—")}</p>
+    <label style="margin-top:0">Assigned to</label>
+    <select onchange="assignLead('${l.id}',this.value)" style="max-width:260px">
+      <option value="">Unassigned</option>
+      ${D.team.map(t=>`<option value="${esc(t.username)}" ${assigneeOf(l)===t.username?"selected":""}>${esc(t.display_name||t.username)}</option>`).join("")}
+    </select>
+    <p style="margin:14px 0 4px"><span class="fine">Contact</span> &nbsp;${esc(l.contact||"—")}</p>
     <p style="margin:4px 0"><span class="fine">Source</span> &nbsp;${esc(l.source||"—")}</p>
-    <p style="margin:4px 0"><span class="fine">Owner</span> &nbsp;${esc(l.owner||"—")}</p>
+    <p style="margin:4px 0"><span class="fine">Added by</span> &nbsp;${esc(l.owner||"—")}</p>
     <p style="margin:4px 0"><span class="fine">Added</span> &nbsp;${new Date(l.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short",year:"numeric"})}</p>
     ${Number(l.deal_value)?`<p style="margin:4px 0"><span class="fine">Deal</span> &nbsp;<span class="money">${money(l.deal_value)}</span> → commission <span class="money">${money(commissionFor(l))}</span>${l.status!=="Closed Won"?' <span class="fine">(if won)</span>':''}</p>`:""}
     ${extras.map(([k,v])=>`<p style="margin:4px 0"><span class="fine">${esc(k)}</span> &nbsp;${esc(v)}</p>`).join("")}
