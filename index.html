@@ -469,9 +469,114 @@ function saveSettings(){
   setPref({ name:$("#s-name").value.trim(), cur:$("#s-cur").value, goal:parseFloat($("#s-goal").value)||0, acc:$("#s-acc").value });
   modal=null; render(); toast("Settings saved");
 }
+function filteredLeads(){
+  let ls=D.leads.filter(inScope);
+  if(flt.q){ const q=flt.q.toLowerCase(); ls=ls.filter(l=>(l.name||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q)); }
+  if(flt.st==="Active") ls=ls.filter(l=>ACTIVE_ST.includes(l.status));
+  else if(flt.st!=="all") ls=ls.filter(l=>l.status===flt.st);
+  if(flt.src!=="all") ls=ls.filter(l=>l.source===flt.src);
+  return ls;
+}
+function exportBackup(){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({exported:new Date().toISOString(),clients:D.clients,leads:D.leads,followups:D.followups,interactions:D.interactions,team:D.team},null,2)],{type:"application/json"}));
+  a.download="scaylr-ops-backup-"+today()+".json"; a.click();
+  toast("Full backup downloaded");
+}
+function parseCSV(text){
+  const rows=[]; let row=[], cur="", inQ=false;
+  text=text.replace(/\r\n?/g,"\n");
+  for(let i=0;i<text.length;i++){
+    const ch=text[i];
+    if(inQ){
+      if(ch==='"'){ if(text[i+1]==='"'){ cur+='"'; i++; } else inQ=false; }
+      else cur+=ch;
+    } else {
+      if(ch==='"') inQ=true;
+      else if(ch===","){ row.push(cur); cur=""; }
+      else if(ch==="\n"){ row.push(cur); cur=""; if(row.some(c=>c.trim()!=="")) rows.push(row); row=[]; }
+      else cur+=ch;
+    }
+  }
+  if(cur!==""||row.length){ row.push(cur); if(row.some(c=>c.trim()!=="")) rows.push(row); }
+  return rows;
+}
+const IMP_FIELDS=[["name","Lead name"],["contact","Contact / phone"],["source","Source"],["deal_value","Deal value"],["status","Status"],["notes","Notes"],["","— skip —"]];
+function guessMap(headers){
+  const m={};
+  headers.forEach((h,i)=>{
+    const s=h.toLowerCase();
+    if(/name|lead|business|company|customer/.test(s)&&m.name===undefined) m.name=i;
+    else if(/phone|contact|number|mobile|whatsapp|tel/.test(s)&&m.contact===undefined) m.contact=i;
+    else if(/source|channel|platform/.test(s)&&m.source===undefined) m.source=i;
+    else if(/value|deal|amount|price|worth/.test(s)&&m.deal_value===undefined) m.deal_value=i;
+    else if(/status|stage/.test(s)&&m.status===undefined) m.status=i;
+    else if(/note|comment|remark|detail/.test(s)&&m.notes===undefined) m.notes=i;
+  });
+  return m;
+}
+function impFile(ev){
+  const f=ev.target.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=()=>{
+    const rows=parseCSV(String(r.result));
+    if(rows.length<2){ toast("That file looks empty"); return; }
+    modal={type:"import", headers:rows[0], rows:rows.slice(1), map:guessMap(rows[0]), clientId:(D.clients[0]&&D.clients[0].id)||"", dedupe:true};
+    render();
+  };
+  r.readAsText(f);
+}
+function impSetMap(field, idx){
+  Object.keys(modal.map).forEach(k=>{ if(modal.map[k]===idx) delete modal.map[k]; });
+  if(field) modal.map[field]=idx;
+  render();
+}
+function normStatus(s){
+  s=String(s||"").toLowerCase();
+  if(/won|closed.?w|sold|converted/.test(s)) return "Closed Won";
+  if(/lost|closed.?l|dead|reject/.test(s)) return "Closed Lost";
+  if(/hold|pause|park/.test(s)) return "On Hold";
+  if(/meet|appoint|discovery|demo|call.?set/.test(s)) return "Meeting Set";
+  if(/contact|follow|progress|talk|reply/.test(s)) return "Contacted";
+  return "New";
+}
+async function doImport(){
+  const m=modal.map;
+  if(m.name===undefined){ errMsg="Map at least the Lead name column."; render(); return; }
+  if(!modal.clientId){ errMsg="Pick a client."; render(); return; }
+  errMsg="";
+  const digits=s=>String(s||"").replace(/\D/g,"");
+  const existing=D.leads.filter(l=>l.client_id===modal.clientId);
+  const seen=new Set(existing.map(l=>digits(l.contact)).filter(Boolean));
+  const seenNames=new Set(existing.map(l=>String(l.name||"").trim().toLowerCase()));
+  const batch=[];
+  let skipped=0;
+  modal.rows.forEach(r=>{
+    const g=f=>m[f]!==undefined?String(r[m[f]]||"").trim():"";
+    const name=g("name"); if(!name) return;
+    const contact=g("contact");
+    if(modal.dedupe&&((contact&&seen.has(digits(contact)))||seenNames.has(name.toLowerCase()))){ skipped++; return; }
+    if(contact) seen.add(digits(contact));
+    seenNames.add(name.toLowerCase());
+    const src=g("source"); const known=SOURCES.find(s=>s.toLowerCase()===src.toLowerCase());
+    batch.push({ client_id:modal.clientId, name, contact, source:known||(src?"Other":"Other"),
+      deal_value:parseFloat(String(g("deal_value")).replace(/[^\d.]/g,""))||0,
+      status:m.status!==undefined?normStatus(g("status")):"New",
+      notes:g("notes"), extra:{}, owner:myUsername(), assigned_to:myUsername() });
+  });
+  if(!batch.length){ errMsg="Nothing new to import"+(skipped?" — "+skipped+" duplicates skipped.":"."); render(); return; }
+  let r=await sb.from("leads").insert(batch);
+  if(r.error){
+    const plain=batch.map(b=>{ const c=Object.assign({},b); delete c.owner; delete c.assigned_to; return c; });
+    r=await sb.from("leads").insert(plain);
+  }
+  if(r.error){ errMsg=r.error.message; render(); return; }
+  modal=null; await hardRefresh();
+  toast("Imported "+batch.length+" leads"+(skipped?" · "+skipped+" duplicates skipped":""));
+}
 function exportCSV(){
   const rows=[["Client","Lead","Owner","Contact","Source","Status","Urgent","Score","Deal value","Commission","Created","Closed"]];
-  D.leads.forEach(l=>{
+  (view==="leads"?filteredLeads():D.leads).forEach(l=>{
     const c=clientOf(l);
     rows.push([c?c.name:"", l.name, l.owner||"", l.contact||"", l.source||"", l.status, l.urgent?"yes":"", score(l),
       Number(l.deal_value)||0, Math.round(commissionFor(l)), (l.created_at||"").slice(0,10), (l.closed_at||"").slice(0,10)]);
@@ -708,16 +813,13 @@ function vPipeline(){
   </div>`;
 }
 function vLeadsList(){
-  let ls=D.leads.filter(inScope);
-  if(flt.q){ const q=flt.q.toLowerCase(); ls=ls.filter(l=>(l.name||"").toLowerCase().includes(q)||(l.contact||"").toLowerCase().includes(q)); }
-  if(flt.st==="Active") ls=ls.filter(l=>ACTIVE_ST.includes(l.status));
-  else if(flt.st!=="all") ls=ls.filter(l=>l.status===flt.st);
-  if(flt.src!=="all") ls=ls.filter(l=>l.source===flt.src);
+  let ls=filteredLeads();
   ls.sort((a,b)=>(b.urgent?1:0)-(a.urgent?1:0)||score(b)-score(a));
   return `
   <div class="topbar">
     <div><h1>All Leads <span class="fine" style="font-size:16px">${ls.length}</span></h1><p class="sub" style="margin-bottom:0">Sorted by urgency, then score.</p></div>
     <div class="spacer" style="flex:1"></div>
+    <label class="ghost sm" style="cursor:pointer">Import CSV<input type="file" accept=".csv,text/csv" style="display:none" onchange="impFile(event)"></label>
     <button class="ghost sm" onclick="exportCSV()">Export CSV</button>
     <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
   </div>
@@ -840,7 +942,33 @@ function vModal(){
   if(modal.type==="close-won") inner=mCloseWon();
   if(modal.type==="settings") inner=mSettings();
   if(modal.type==="team-edit") inner=mTeam();
+  if(modal.type==="import") inner=mImport();
   return `<div class="modal-bg" onclick="if(event.target===this){modal=null;errMsg='';render()}"><div class="sheet"><div class="grab"></div>${inner}</div></div>`;
+}
+function mImport(){
+  const prev=modal.rows.slice(0,3);
+  const usedBy=idx=>{ for(const [f] of IMP_FIELDS){ if(f&&modal.map[f]===idx) return f; } return ""; };
+  return `<h2 style="font-size:19px">Import leads</h2>
+  <p class="meta" style="margin-top:4px">${modal.rows.length} rows found. Tell me what each column is — I've guessed where I could.</p>
+  <label>Import into client</label>
+  <select onchange="modal.clientId=this.value">${D.clients.map(c=>`<option value="${c.id}" ${modal.clientId===c.id?"selected":""}>${esc(c.name)}</option>`).join("")}</select>
+  <div class="sect">Columns</div>
+  ${modal.headers.map((h,i)=>`
+    <div style="display:flex;gap:10px;align-items:center;padding:4px 0">
+      <span class="meta" style="width:38%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><strong>${esc(h||"(no header)")}</strong><br><span class="fine">${esc(prev.map(r=>r[i]).filter(Boolean).slice(0,2).join(" · ").slice(0,40))}</span></span>
+      <select style="flex:1" onchange="impSetMap(this.value===''?null:this.value, ${i})">
+        ${IMP_FIELDS.map(([f,txt])=>`<option value="${f}" ${usedBy(i)===f||((!f)&&!usedBy(i))?"selected":""}>${txt}</option>`).join("")}
+      </select>
+    </div>`).join("")}
+  <div style="display:flex;gap:8px;align-items:center;margin-top:14px">
+    <input type="checkbox" ${modal.dedupe?"checked":""} style="width:17px;height:17px;accent-color:var(--acc)" onchange="modal.dedupe=this.checked">
+    <span class="meta">Skip duplicates (same phone or name already in this client)</span>
+  </div>
+  <div class="err">${esc(errMsg)}</div>
+  <div class="m-foot">
+    <button class="ghost" onclick="modal=null;errMsg='';render()">Cancel</button>
+    <button class="btn" onclick="doImport()">Import ${modal.rows.length} rows</button>
+  </div>`;
 }
 function mSettings(){
   const p=pref();
@@ -853,6 +981,7 @@ function mSettings(){
   <label>Monthly commission goal (${CUR()})</label>
   <input id="s-goal" type="number" inputmode="decimal" value="${p.goal||""}" placeholder="e.g. 250000">
   <p class="fine" style="margin-top:8px">Saved on this device only.</p>
+  <div style="margin-top:16px"><button class="ghost sm" onclick="exportBackup()">Download full backup (JSON)</button></div>
   <div class="m-foot">
     <button class="ghost" onclick="modal=null;render()">Cancel</button>
     <button class="btn" onclick="saveSettings()">Save</button>
