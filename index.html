@@ -319,6 +319,63 @@ function callOpen(id){
 function copyTxt(t){
   navigator.clipboard.writeText(t).then(()=>toast("Copied"));
 }
+const QUICK=[["No answer","Call"],["Call back later","Call"],["Left message","Call"],["Sent details","DM"],["Interested","Note"],["Not interested","Note"],["Meeting booked","Meeting"]];
+function autoTick(leadId){
+  const due=D.followups.filter(f=>f.lead_id===leadId&&!f.done&&f.due_date<=today());
+  due.forEach(f=>{ f.done=true; sb.from("followups").update({done:true}).eq("id",f.id).then(r=>{ if(r.error) syncFail(); }); });
+  if(due.length) toast("Follow-up auto-completed");
+}
+async function quickLog(leadId, qi){
+  const [note,kind]=QUICK[qi];
+  const q=modal&&modal.queue;
+  const body={lead_id:leadId,kind,note};
+  let { data, error }=await sb.from("interactions").insert(Object.assign({},body,{created_by:myUsername()})).select();
+  if(error){ ({ data, error }=await sb.from("interactions").insert(body).select()); }
+  if(error){ syncFail(); return; }
+  D.interactions.unshift(data[0]);
+  autoTick(leadId);
+  modal={type:"lead-view",id:leadId,tab:"activity",nextStep:true,queue:q};
+  render(); toast("Logged: "+note);
+}
+async function quickFup(leadId, days){
+  const q=modal&&modal.queue;
+  if(days>0){
+    const d=new Date(); d.setDate(d.getDate()+days);
+    const due=d.toISOString().slice(0,10);
+    const { data, error }=await sb.from("followups").insert({lead_id:leadId,due_date:due,note:""}).select();
+    if(!error&&data){ D.followups.push(data[0]); D.followups.sort((a,b)=>a.due_date<b.due_date?-1:1); toast("Next follow-up "+fmtD(due)); }
+  }
+  if(q) advanceQueue(q);
+  else { modal={type:"lead-view",id:leadId,tab:"activity"}; render(); }
+}
+function snoozeFup(fid, days){
+  const f=D.followups.find(x=>x.id===fid); if(!f) return;
+  const base=f.due_date<today()?new Date():new Date(f.due_date+"T00:00:00");
+  base.setDate(base.getDate()+days);
+  f.due_date=base.toISOString().slice(0,10);
+  D.followups.sort((a,b)=>a.due_date<b.due_date?-1:1);
+  render(); toast("Snoozed to "+fmtD(f.due_date));
+  sb.from("followups").update({due_date:f.due_date}).eq("id",fid).then(r=>{ if(r.error) syncFail(); });
+}
+function dueLeadIds(){
+  const fups=D.followups.filter(f=>!f.done&&f.due_date<=today()).sort((a,b)=>a.due_date<b.due_date?-1:1);
+  const ids=[];
+  fups.forEach(f=>{ const l=D.leads.find(x=>x.id===f.lead_id); if(l&&inScope(l)&&ACTIVE_ST.includes(l.status)&&!ids.includes(l.id)) ids.push(l.id); });
+  ids.sort((a,b)=>{ const la=D.leads.find(x=>x.id===a), lb=D.leads.find(x=>x.id===b); return (lb.urgent?1:0)-(la.urgent?1:0); });
+  return ids;
+}
+function startQueue(){
+  const ids=dueLeadIds();
+  if(!ids.length){ toast("Nothing due — queue is clear"); return; }
+  modal={type:"lead-view",id:ids[0],tab:"prep",queue:{ids,i:0}};
+  render();
+}
+function advanceQueue(q){
+  const ni=q.i+1;
+  if(ni>=q.ids.length){ modal=null; render(); toast("Queue cleared — all done!"); return; }
+  modal={type:"lead-view",id:q.ids[ni],tab:"prep",queue:{ids:q.ids,i:ni}};
+  render();
+}
 
 /* ---------- game plan ---------- */
 function gamePlan(l){
@@ -418,12 +475,14 @@ async function addInteraction(leadId){
   const note=$("#i-note").value.trim();
   if(!note){ errMsg="Write something first."; render(); return; }
   errMsg="";
+  const q=modal&&modal.queue;
   const body={lead_id:leadId,kind:$("#i-kind").value,note};
   let { data, error }=await sb.from("interactions").insert(Object.assign({},body,{created_by:myUsername()})).select();
   if(error){ ({ data, error }=await sb.from("interactions").insert(body).select()); }
   if(error){ syncFail(); return; }
   D.interactions.unshift(data[0]);
-  modal={type:"lead-view",id:leadId,tab:"activity"}; render();
+  autoTick(leadId);
+  modal={type:"lead-view",id:leadId,tab:"activity",nextStep:true,queue:q}; render();
 }
 async function saveClient(id){
   const b={ name:$("#c-name").value.trim(), industry:$("#c-ind").value.trim(),
@@ -716,6 +775,7 @@ function vDash(){
       <span class="fine">${f.due_date<today()?"Overdue "+Math.floor((new Date(today())-new Date(f.due_date))/86400000)+"d":"Due today"}${f.note?" – "+esc(f.note):""}</span>
       <div class="spacer" style="flex:1"></div>
       ${phoneOf(l)?`<button class="ghost sm wa" onclick="event.stopPropagation();waOpen('${l.id}')">WhatsApp</button>`:""}
+      <button class="copy" onclick="event.stopPropagation();snoozeFup('${f.id}',1)">+1d</button>
       <button class="btn sm" onclick="event.stopPropagation();modal={type:'lead-view',id:'${l.id}',tab:'activity'};render()">Log</button>
     </div>`;
   };
@@ -728,7 +788,8 @@ function vDash(){
     <div class="spacer" style="flex:1"></div>
     ${scopeSeg()}
     <button class="ghost sm" onclick="exportCSV()">Export</button>
-    <button class="btn sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
+    ${dueLeadIds().length?`<button class="btn sm" onclick="startQueue()">▶ Start working (${dueLeadIds().length})</button>`:""}
+    <button class="${dueLeadIds().length?'ghost':'btn'} sm" onclick="modal={type:'lead-edit'};render()">+ Add Lead</button>
   </div>
   <div class="twin" style="margin-top:18px">
     <div class="panel">
@@ -1074,6 +1135,16 @@ function mLeadView(){
     </div>
     ${ints.length?`<p class="fine" style="margin-top:12px">Last interaction: ${esc(ints[0].kind)} — ${esc(ints[0].note)}</p>`:""}`;
   if(tab==="activity") body=`
+    ${modal.nextStep?`<div class="gp" style="margin:0 0 12px">
+      <div class="k" style="color:var(--acc)">NEXT FOLLOW-UP?</div>
+      <div class="seg" style="margin-top:8px">
+        <button onclick="quickFup('${l.id}',1)">Tomorrow</button>
+        <button onclick="quickFup('${l.id}',3)">In 3 days</button>
+        <button onclick="quickFup('${l.id}',7)">Next week</button>
+        <button onclick="quickFup('${l.id}',0)">${modal.queue?"Next lead →":"No thanks"}</button>
+      </div>
+    </div>`:""}
+    <div class="seg" style="margin:0 0 12px">${QUICK.map((qk,qi)=>`<button onclick="quickLog('${l.id}',${qi})">${qk[0]}</button>`).join("")}</div>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <select id="i-kind" style="width:110px"><option>DM</option><option>WhatsApp</option><option>Call</option><option>Meeting</option><option>Note</option></select>
       <input id="i-note" placeholder="What happened?" style="flex:1" onkeydown="if(event.key==='Enter')addInteraction('${l.id}')">
@@ -1085,7 +1156,8 @@ function mLeadView(){
       <div style="display:flex;gap:10px;align-items:center;padding:5px 0">
         <input type="checkbox" ${f.done?"checked":""} style="width:17px;height:17px;accent-color:var(--acc)" onchange="toggleFup('${f.id}',this.checked);modal={type:'lead-view',id:'${l.id}',tab:'fups'}">
         <span class="${f.done?'fine':(f.due_date<today()?'over':f.due_date===today()?'todayc':'meta')}" style="${f.done?'text-decoration:line-through':''}">${fmtD(f.due_date)}</span>
-        <span class="fine">${esc(f.note||"")}</span>
+        <span class="fine" style="flex:1">${esc(f.note||"")}</span>
+        ${!f.done?`<button class="copy" onclick="snoozeFup('${f.id}',1)">+1d</button><button class="copy" onclick="snoozeFup('${f.id}',3)">+3d</button>`:""}
       </div>`).join(""):`<p class="fine">None yet — set one so this lead never goes cold.</p>`}
     <div style="display:flex;gap:8px;margin-top:10px">
       <input id="f-due" type="date" value="${today()}" style="width:150px">
@@ -1107,6 +1179,11 @@ function mLeadView(){
     ${l.notes?`<div class="sect" style="margin-top:14px">Notes</div><p class="meta" style="white-space:pre-wrap">${esc(l.notes)}</p>`:""}
     <div style="margin-top:16px"><button class="ghost sm" onclick="modal={type:'lead-edit',id:'${l.id}'};render()">Edit details</button></div>`;
   return `
+  ${modal.queue?`<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+    <span class="chip" style="color:var(--acc);font-weight:700">WORKING QUEUE · ${modal.queue.i+1} OF ${modal.queue.ids.length}</span>
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost sm" onclick="advanceQueue(modal.queue)">Skip →</button>
+  </div>`:""}
   <div style="display:flex;align-items:flex-start;gap:12px">
     <div>
       <h2 style="font-size:20px">${esc(l.name)} ${l.urgent?'<span class="flag">!</span>':''} ${scoreBadge(l)}</h2>
