@@ -155,6 +155,17 @@
   #toasts { position:fixed; bottom:calc(76px + env(safe-area-inset-bottom)); left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:8px; z-index:60; pointer-events:none; }
   @media (min-width:821px){ #toasts { bottom:24px; } }
   .toast { background:var(--sur2); color:var(--txt); border:1px solid var(--line); border-radius:99px; padding:10px 20px; font-size:13.5px; font-weight:500; animation:up .25s ease; box-shadow:0 8px 30px rgba(0,0,0,.4); }
+  @media print {
+    body { background:#fff !important; color:#000 !important; }
+    .side, nav.bottom, .fab, .noprint, #toasts { display:none !important; }
+    main { margin:0 !important; padding:0 !important; max-width:100% !important; }
+    .list, .panel, .scard, .item, .cards > div { background:#fff !important; border:1px solid #ddd !important; }
+    .item { border:none !important; border-bottom:1px solid #eee !important; box-shadow:none !important; }
+    h1, h2, h3, h4, strong, p, span, div { color:#000 !important; }
+    .fine, .meta, .sub, .sect { color:#444 !important; }
+    .score { border:1px solid #999 !important; background:#fff !important; color:#000 !important; }
+    .dot { border:1px solid #000; }
+  }
   .auth { max-width:360px; margin:14vh auto 0; padding:0 18px; }
   .auth .card { background:var(--sur); border-radius:20px; padding:28px 24px; }
   .auth h2 { font-size:20px; margin-bottom:4px; }
@@ -173,6 +184,7 @@ const SOURCES = ["Instagram","Facebook","WhatsApp","Referral","Other"];
 const PIN_DOMAIN = "fusionops.local";
 let sb=null, user=null, D={clients:[],leads:[],followups:[],interactions:[],team:[]}, view="dash", modal=null, errMsg="", boardClient="all", dragId=null;
 let flt = { q:"", st:"Active", src:"all" };
+let rep = { client:"", period:"week" };
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s==null?"":s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -664,6 +676,7 @@ function render(){
   if(view==="leads") body=vLeadsList();
   if(view==="clients") body=vClients();
   if(view==="team") body=vTeam();
+  if(view==="reports") body=vReports();
   app.innerHTML=`<div class="shell">${vSide()}<main><div class="fade">${body}</div></main></div>`+vBottom()+
     `<button class="fab" onclick="modal={type:'lead-edit'};render()" aria-label="Add lead">+</button>`+
     (modal?vModal():"");
@@ -707,6 +720,7 @@ function vSide(){
     <div class="grp">Business</div>
     ${nav("clients","◇","Clients")}
     ${nav("team","◉","Team")}
+    ${nav("reports","▥","Reports")}
     <div class="foot">
       <div class="me">
         <span class="init">${initials(myName())}</span>
@@ -718,7 +732,7 @@ function vSide(){
   </aside>`;
 }
 function vBottom(){
-  const tabs=[["dash","▦","Home"],["pipeline","▤","Board"],["leads","≡","Leads"],["clients","◇","Clients"],["team","◉","Team"]];
+  const tabs=[["dash","▦","Home"],["pipeline","▤","Board"],["leads","≡","Leads"],["reports","▥","Reports"],["clients","◇","Clients"],["team","◉","Team"]];
   return `<nav class="bottom">${tabs.map(t=>`<button class="${view===t[0]?'on':''}" onclick="view='${t[0]}';modal=null;render()"><span class="glyph">${t[1]}</span>${t[2]}</button>`).join("")}</nav>`;
 }
 function greet(){
@@ -934,6 +948,120 @@ function vClients(){
   </div>`;
 }
 
+function repRange(){
+  const now=new Date(); let from=new Date(0), to=new Date(8640000000000000), label="All time";
+  if(rep.period==="week"){ from=new Date(now); from.setDate(now.getDate()-now.getDay()); from.setHours(0,0,0,0); label="This week"; }
+  else if(rep.period==="month"){ from=new Date(now.getFullYear(),now.getMonth(),1); label=now.toLocaleDateString(undefined,{month:"long",year:"numeric"}); }
+  else if(rep.period==="last"){ from=new Date(now.getFullYear(),now.getMonth()-1,1); to=new Date(now.getFullYear(),now.getMonth(),1); label=from.toLocaleDateString(undefined,{month:"long",year:"numeric"}); }
+  return {from:from.getTime(), to:to.getTime(), label};
+}
+function repData(){
+  const {from,to,label}=repRange();
+  const cid=rep.client||(D.clients[0]&&D.clients[0].id);
+  const client=D.clients.find(c=>c.id===cid)||{};
+  const leads=D.leads.filter(l=>l.client_id===cid);
+  const ids=new Set(leads.map(l=>l.id));
+  const inP=t=>{ const x=new Date(t).getTime(); return x>=from&&x<to; };
+  const acts=D.interactions.filter(i=>ids.has(i.lead_id)&&inP(i.created_at));
+  const fupsDone=D.followups.filter(f=>ids.has(f.lead_id)&&f.done);
+  const newLeads=leads.filter(l=>inP(l.created_at));
+  const won=leads.filter(l=>l.status==="Closed Won"&&l.closed_at&&inP(l.closed_at));
+  const lost=leads.filter(l=>l.status==="Closed Lost"&&l.closed_at&&inP(l.closed_at));
+  const active=leads.filter(l=>ACTIVE_ST.includes(l.status));
+  const byKind=k=>acts.filter(a=>a.kind===k).length;
+  return {label,client,leads,acts,fupsDone,newLeads,won,lost,active,byKind,cid};
+}
+function repCopy(){
+  const r=repData();
+  const lines=[
+    r.client.name+" — "+r.label,
+    "",
+    "New leads: "+r.newLeads.length,
+    "Activities logged: "+r.acts.length+" ("+r.byKind("Call")+" calls, "+(r.byKind("DM")+r.byKind("WhatsApp"))+" messages, "+r.byKind("Meeting")+" meetings)",
+    "Follow-ups completed: "+r.fupsDone.length,
+    "Meetings booked: "+r.leads.filter(l=>l.status==="Meeting Set").length,
+    "Deals won: "+r.won.length,
+    "Active leads in pipeline: "+r.active.length,
+    "",
+    "Pipeline: "+STATUSES.filter(s=>!s.startsWith("Closed")).map(s=>s+" "+r.leads.filter(l=>l.status===s).length).join(" · "),
+    "",
+    "— Scaylr Global"
+  ];
+  copyTxt(lines.join("\n"));
+}
+function repCSV(){
+  const r=repData();
+  const rows=[["Lead","Stage","Score","Source","Added","Days active","Activities","Last activity","Next follow-up"]];
+  r.leads.forEach(l=>{
+    const ints=D.interactions.filter(i=>i.lead_id===l.id);
+    const nf=nextFup(l);
+    rows.push([l.name, l.status, score(l), l.source||"", (l.created_at||"").slice(0,10),
+      Math.floor((Date.now()-new Date(l.created_at).getTime())/86400000),
+      ints.length, ints[0]?ints[0].kind+": "+ints[0].note:"", nf?nf.due_date:""]);
+  });
+  const csv=rows.map(x=>x.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));
+  a.download=(r.client.name||"client").replace(/\s+/g,"-")+"-report-"+today()+".csv"; a.click();
+  toast("Report CSV downloaded");
+}
+function vReports(){
+  if(!D.clients.length) return `<h1>Reports</h1><div class="list"><div class="empty">Add a client first.</div></div>`;
+  if(!rep.client) rep.client=D.clients[0].id;
+  const r=repData();
+  const periods=[["week","This week"],["month","This month"],["last","Last month"],["all","All time"]];
+  const stageRow=s=>{ const n=r.leads.filter(l=>l.status===s).length; return `<div class="item" style="cursor:default"><span class="dot ${dcls(s)}"></span><strong>${s}</strong><div class="spacer" style="flex:1"></div><span class="meta">${n}</span></div>`; };
+  const leadRowR=l=>{
+    const ints=D.interactions.filter(i=>i.lead_id===l.id);
+    const nf=nextFup(l);
+    const days=Math.floor((Date.now()-new Date(l.created_at).getTime())/86400000);
+    return `<div class="item" style="cursor:default;align-items:flex-start">
+      <span class="dot ${dcls(l.status)}" style="margin-top:6px"></span>
+      <div style="flex:1;min-width:180px">
+        <strong>${esc(l.name)}</strong> ${scoreBadge(l)}
+        <div class="fine">${esc(l.status)} · added ${new Date(l.created_at).toLocaleDateString(undefined,{day:"numeric",month:"short"})} · ${days}d active · ${ints.length} activities${l.source?" · "+esc(l.source):""}</div>
+        ${ints[0]?`<div class="meta" style="margin-top:3px">Last: ${esc(ints[0].kind)} — ${esc(ints[0].note)}</div>`:`<div class="fine" style="margin-top:3px">No activity logged yet</div>`}
+      </div>
+      <div style="text-align:right" class="fine">${nf?"next "+fmtD(nf.due_date):"—"}</div>
+    </div>`;
+  };
+  return `
+  <div class="topbar noprint">
+    <div><h1>Reports</h1><p class="sub" style="margin-bottom:0">Client-ready summaries, built from your logged work.</p></div>
+    <div class="spacer" style="flex:1"></div>
+    <button class="ghost sm" onclick="repCopy()">Copy WhatsApp summary</button>
+    <button class="ghost sm" onclick="repCSV()">Export CSV</button>
+    <button class="btn sm" onclick="window.print()">Save as PDF</button>
+  </div>
+  <div class="noprint" style="display:flex;gap:14px;flex-wrap:wrap;margin:16px 0">
+    <div class="seg" style="margin-top:0">${D.clients.map(c=>`<button class="${rep.client===c.id?'on':''}" onclick="rep.client='${c.id}';render()">${esc(c.name)}</button>`).join("")}</div>
+    <div class="seg" style="margin-top:0">${periods.map(p=>`<button class="${rep.period===p[0]?'on':''}" onclick="rep.period='${p[0]}';render()">${p[1]}</button>`).join("")}</div>
+  </div>
+  <div class="panel" style="margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px">
+      <div>
+        <h2 style="font-size:22px">${esc(r.client.name)}</h2>
+        <p class="meta">Lead activity report · ${esc(r.label)}</p>
+      </div>
+      <div style="text-align:right" class="fine">Prepared by Scaylr Global<br>${new Date().toLocaleDateString(undefined,{day:"numeric",month:"long",year:"numeric"})}</div>
+    </div>
+  </div>
+  <div class="cards">
+    <div class="scard"><div class="v">${r.newLeads.length}</div><div class="t">New leads</div><div class="s">added in period</div></div>
+    <div class="scard"><div class="v">${r.acts.length}</div><div class="t">Activities logged</div><div class="s">${r.byKind("Call")} calls · ${r.byKind("DM")+r.byKind("WhatsApp")} messages</div></div>
+    <div class="scard"><div class="v">${r.fupsDone.length}</div><div class="t">Follow-ups done</div><div class="s">total completed</div></div>
+    <div class="scard"><div class="v">${r.leads.filter(l=>l.status==="Meeting Set").length}</div><div class="t">Meetings set</div><div class="s">${r.byKind("Meeting")} held in period</div></div>
+    <div class="scard"><div class="v">${r.won.length}</div><div class="t">Deals won</div><div class="s">${r.lost.length} lost</div></div>
+    <div class="scard"><div class="v">${r.active.length}</div><div class="t">Active pipeline</div><div class="s">leads in play</div></div>
+  </div>
+  <div class="sect">Pipeline right now</div>
+  <div class="list">${STATUSES.filter(s=>!s.startsWith("Closed")).map(stageRow).join("")}</div>
+  <div class="sect">Active leads — detail</div>
+  <div class="list">${r.active.length?r.active.slice().sort((a,b)=>score(b)-score(a)).map(leadRowR).join(""):`<div class="empty">No active leads.</div>`}</div>
+  ${r.won.length?`<div class="sect">Won in this period</div><div class="list">${r.won.map(leadRowR).join("")}</div>`:""}
+  ${r.lost.length?`<div class="sect">Lost in this period</div><div class="list">${r.lost.map(leadRowR).join("")}</div>`:""}
+  <p class="fine" style="margin-top:22px;text-align:center">Generated by Scaylr Ops · scaylrglobal.com</p>`;
+}
 function vTeam(){
   return `
   <div class="topbar">
